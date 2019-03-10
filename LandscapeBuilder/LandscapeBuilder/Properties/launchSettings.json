@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "LandscapeBuilder": {
+      "commandName": "Project",
+      "commandLineArgs": "-A --landscape-name CentralVA --output %USERPROFILE%\\Documents\\CondorScenery\\LandscapeBuilder\\BuilderOutput --input %USERPROFILE%\\Documents\\CondorScenery\\LandscapeBuilder\\Atlas --texture-dir %USERPROFILE%\\Documents\\CondorScenery\\LandscapeBuilder\\Textures -s 0804"
+    }
+  }
+}
