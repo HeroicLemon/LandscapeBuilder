@@ -386,10 +386,13 @@ namespace LandscapeBuilderGUI
         {
             LandscapeNames.Clear();
 
-            string[] landscapes = Directory.GetDirectories(_landscapeBuilder.CondorDirectory);
-            foreach(string landscape in landscapes)
+            if (_landscapeBuilder.CondorDirectory != null)
             {
-                LandscapeNames.Add(landscape.Substring(_landscapeBuilder.CondorDirectory.Length + 1));
+                string[] landscapes = Directory.GetDirectories(_landscapeBuilder.CondorDirectory);
+                foreach (string landscape in landscapes)
+                {
+                    LandscapeNames.Add(landscape.Substring(_landscapeBuilder.CondorDirectory.Length + 1));
+                }
             }
         }
 
@@ -397,10 +400,13 @@ namespace LandscapeBuilderGUI
         {
             TileNames.Clear();
 
-            string[] mapFiles = Directory.GetFiles(InputDirectory, "*.png", SearchOption.TopDirectoryOnly);
-            foreach(string file in mapFiles)
+            if (Directory.Exists(InputDirectory))
             {
-                TileNames.Add(Path.GetFileNameWithoutExtension(file));
+                string[] mapFiles = Directory.GetFiles(InputDirectory, "*.png", SearchOption.TopDirectoryOnly);
+                foreach (string file in mapFiles)
+                {
+                    TileNames.Add(Path.GetFileNameWithoutExtension(file));
+                }
             }
 
             InputTilesPresent = TileNames.Count > 0;

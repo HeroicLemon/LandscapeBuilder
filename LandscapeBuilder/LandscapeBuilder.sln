@@ -11,34 +11,20 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LandscapeBuilderLib", "Land
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
-		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Debug|x64.ActiveCfg = Debug|x64
 		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Debug|x64.Build.0 = Debug|x64
-		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Release|Any CPU.Build.0 = Release|Any CPU
 		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Release|x64.ActiveCfg = Release|x64
 		{57EFB876-EA6B-460A-BDAB-D6DD739542E6}.Release|x64.Build.0 = Release|x64
-		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Debug|x64.ActiveCfg = Debug|x64
 		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Debug|x64.Build.0 = Debug|x64
-		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Release|x64.ActiveCfg = Release|x64
 		{D5D25541-1DCD-4A75-AE88-C97814E81666}.Release|x64.Build.0 = Release|x64
-		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Debug|x64.ActiveCfg = Debug|x64
 		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Debug|x64.Build.0 = Debug|x64
-		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Release|Any CPU.Build.0 = Release|Any CPU
 		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Release|x64.ActiveCfg = Release|x64
 		{8F78676E-5166-4F27-9935-E1F2E62A3FD2}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection

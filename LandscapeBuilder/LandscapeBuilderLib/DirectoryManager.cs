@@ -37,6 +37,7 @@ namespace LandscapeBuilderLib
         public DirectoryManager()
         {
             initializeDefaultDirectories();
+            CreateDirectories();
             findCondor();
         }
 
