@@ -85,6 +85,10 @@ namespace LandscapeBuilderLib
         {
             _outputToConsole = outputToConsole;
             InitializeDirectories();
+
+            //RunwayShapefileParser parser = new RunwayShapefileParser();
+            //parser.ParseShapefile();
+            
         }
 
         // landscapeName is the name of the landscape in Condor. It is used for naming some files (e.g., [LandscapeName].tdm) and, if outputToCondor is true, determines where to write the final files.
