@@ -86,9 +86,24 @@ namespace LandscapeBuilderLib
             _outputToConsole = outputToConsole;
             InitializeDirectories();
 
-            //RunwayShapefileParser parser = new RunwayShapefileParser();
-            //parser.ParseShapefile();
-            
+            //FAAShapefileRunwayParser parser = new FAAShapefileRunwayParser();
+            //List<Airport> airports = parser.Parse();
+
+            //byte[] bytes = null;
+            //foreach(Airport airport in airports)
+            //{
+            //    if(bytes == null)
+            //    {
+            //        bytes = airport.GetBytes();
+            //    }
+            //    else
+            //    {
+            //        bytes = bytes.Concat(airport.GetBytes()).ToArray();
+            //    }
+            //}
+
+            //File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
+
         }
 
         // landscapeName is the name of the landscape in Condor. It is used for naming some files (e.g., [LandscapeName].tdm) and, if outputToCondor is true, determines where to write the final files.

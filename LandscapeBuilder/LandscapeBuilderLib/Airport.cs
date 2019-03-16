@@ -36,7 +36,7 @@ namespace LandscapeBuilderLib
         public bool TowPrimaryLeftSide { get; private set; }
         public bool TowSecondaryLeftSide { get; private set; }
 
-        public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, float frequency, bool asphalt = false, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
+        public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, bool asphalt = false, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
         {
             Name = name;
             Latitude = latitude;
