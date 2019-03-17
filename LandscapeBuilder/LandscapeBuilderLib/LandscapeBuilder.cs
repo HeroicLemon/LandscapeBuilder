@@ -86,13 +86,13 @@ namespace LandscapeBuilderLib
             _outputToConsole = outputToConsole;
             InitializeDirectories();
 
-            //FAAShapefileRunwayParser parser = new FAAShapefileRunwayParser();
+            //FAANASRRunwayParser parser = new FAANASRRunwayParser();
             //List<Airport> airports = parser.Parse();
 
             //byte[] bytes = null;
-            //foreach(Airport airport in airports)
+            //foreach (Airport airport in airports)
             //{
-            //    if(bytes == null)
+            //    if (bytes == null)
             //    {
             //        bytes = airport.GetBytes();
             //    }
@@ -102,7 +102,23 @@ namespace LandscapeBuilderLib
             //    }
             //}
 
-            //File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
+            FAAShapefileRunwayParser parser2 = new FAAShapefileRunwayParser();
+            List<Airport> airports2 = parser2.Parse();
+
+            byte[] bytes2 = null;
+            foreach (Airport airport in airports2)
+            {
+                if (bytes2 == null)
+                {
+                    bytes2 = airport.GetBytes();
+                }
+                else
+                {
+                    bytes2 = bytes2.Concat(airport.GetBytes()).ToArray();
+                }
+            }
+
+            File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes2);
 
         }
 
