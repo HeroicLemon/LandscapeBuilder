@@ -1,13 +1,15 @@
 ﻿using Microsoft.Win32;
 using System;
 using System.IO;
+using System.Linq;
 using Newtonsoft.Json;
 
 namespace LandscapeBuilderLib
 {
     [JsonObject(MemberSerialization.OptIn)]
-    class DirectoryManager
+    sealed class SettingsManager
     {
+        #region Directories
         // The input directory where the reference maps are stored.
         [JsonProperty]
         public string InputMap { get; set; }
@@ -33,12 +35,43 @@ namespace LandscapeBuilderLib
         public string CondorLandscape { get; private set; }
 
         public string Executable { get; private set; }
+        #endregion
 
-        public DirectoryManager()
+        [JsonProperty]
+        public string LandscapeName { get; set; }
+
+
+        private static readonly Lazy<SettingsManager> lazy = new Lazy<SettingsManager>(() => new SettingsManager());
+        public static SettingsManager Instance {  get { return lazy.Value; } }
+
+        private SettingsManager()
         {
+
+        }
+
+        public void InitSettings()
+        {
+            // Save the default directories.
             initializeDefaultDirectories();
-            CreateDirectories();
             findCondor();
+            if (File.Exists(Path.Combine(AppData, "settings.conf")))
+            {
+                string json = File.ReadAllText(Path.Combine(AppData, "settings.conf"));
+                load(JsonConvert.DeserializeObject<SettingsManager>(json));
+            }
+            else
+            {
+                SaveSettings();
+            }
+
+            CreateDirectories();
+        }
+
+        // TODO: Find a more maintainable way of doing this.
+        private void load(SettingsManager other)
+        {
+            this.Output = other.Output;
+            this.InputMap = other.InputMap;
         }
 
         private void initializeDefaultDirectories()
@@ -56,6 +89,12 @@ namespace LandscapeBuilderLib
             OutputFinal = Path.Combine(Output, "Final");
 
             AppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LandscapeBuilder");
+        }
+
+        public void SaveSettings()
+        {
+            string json = JsonConvert.SerializeObject(this, Formatting.Indented);
+            File.WriteAllText(Path.Combine(AppData, "settings.conf"), json);
         }
 
         public void CreateDirectories()
@@ -90,6 +129,13 @@ namespace LandscapeBuilderLib
                     if (displayName.Equals("Condor 2"))
                     {
                         CondorLandscape = Path.Combine(key.GetValue("InstallLocation").ToString(), "Landscapes");
+                        // If the landscape name hasn't been set yet, pick one as the default.
+                        if (LandscapeName == null)
+                        {
+                            string landscapePath = Directory.GetDirectories(CondorLandscape).FirstOrDefault();
+                            LandscapeName = new DirectoryInfo(landscapePath).Name;
+                        }
+                        break;
                     }
                 }
             }

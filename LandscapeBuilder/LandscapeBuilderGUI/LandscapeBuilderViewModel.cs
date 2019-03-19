@@ -103,7 +103,11 @@ namespace LandscapeBuilderGUI
         public string LandscapeName
         {
             get { return _landscapeName; }
-            set { SetProperty(ref _landscapeName, value); }
+            set
+            {
+                SetProperty(ref _landscapeName, value);
+                _landscapeBuilder.LandscapeName = value;
+            }
         }
 
         private ObservableCollection<string> _tileNames = new ObservableCollection<string>();
@@ -179,6 +183,7 @@ namespace LandscapeBuilderGUI
             _textures = _landscapeBuilder.Textures;
             _outputDirectory = _landscapeBuilder.OutputDirectory;
             _inputDirectory = _landscapeBuilder.InputDirectory;
+            _landscapeName = _landscapeBuilder.LandscapeName;
 
             populateTileNames();
             populateLandscapes();
@@ -214,7 +219,7 @@ namespace LandscapeBuilderGUI
 
             _landscapeBuilder.OutputDirectory = OutputDirectory;
             _landscapeBuilder.InputDirectory = InputDirectory;
-            _landscapeBuilder.SaveDirectories();
+            _landscapeBuilder.SaveSettings();
         }
 
         bool CanSave()
@@ -243,7 +248,7 @@ namespace LandscapeBuilderGUI
             string singleTile = GenerateSingleTile ? SingleTileName : string.Empty;
             BuilderRunning = true;
             await Task.Run((()
-                => _landscapeBuilder.Build(LandscapeName, GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, _landscapeBuilder.OutputDirectory, _landscapeBuilder.InputDirectory, singleTile)
+                => _landscapeBuilder.Build(GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, _landscapeBuilder.OutputDirectory, _landscapeBuilder.InputDirectory, singleTile)
                 ));
             BuilderRunning = false;
         }
