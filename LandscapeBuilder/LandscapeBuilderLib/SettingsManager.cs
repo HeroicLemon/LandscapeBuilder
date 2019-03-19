@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 namespace LandscapeBuilderLib
 {
     [JsonObject(MemberSerialization.OptIn)]
-    sealed class SettingsManager
+    public sealed class SettingsManager
     {
         #region Directories
         // The input directory where the reference maps are stored.

@@ -106,7 +106,7 @@ namespace LandscapeBuilderGUI
             set
             {
                 SetProperty(ref _landscapeName, value);
-                _landscapeBuilder.LandscapeName = value;
+                SettingsManager.Instance.LandscapeName = value;
             }
         }
 
@@ -181,9 +181,9 @@ namespace LandscapeBuilderGUI
 
             _landscapeBuilder.InitializeTextures();
             _textures = _landscapeBuilder.Textures;
-            _outputDirectory = _landscapeBuilder.OutputDirectory;
-            _inputDirectory = _landscapeBuilder.InputDirectory;
-            _landscapeName = _landscapeBuilder.LandscapeName;
+            _outputDirectory = SettingsManager.Instance.Output;
+            _inputDirectory = SettingsManager.Instance.InputMap;
+            _landscapeName = SettingsManager.Instance.LandscapeName;
 
             populateTileNames();
             populateLandscapes();
@@ -217,8 +217,8 @@ namespace LandscapeBuilderGUI
             _landscapeBuilder.Textures = Textures;
             _landscapeBuilder.SaveTextures();
 
-            _landscapeBuilder.OutputDirectory = OutputDirectory;
-            _landscapeBuilder.InputDirectory = InputDirectory;
+            SettingsManager.Instance.Output = OutputDirectory;
+            SettingsManager.Instance.InputMap = InputDirectory;
             _landscapeBuilder.SaveSettings();
         }
 
@@ -248,7 +248,7 @@ namespace LandscapeBuilderGUI
             string singleTile = GenerateSingleTile ? SingleTileName : string.Empty;
             BuilderRunning = true;
             await Task.Run((()
-                => _landscapeBuilder.Build(GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, _landscapeBuilder.OutputDirectory, _landscapeBuilder.InputDirectory, singleTile)
+                => _landscapeBuilder.Build(GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, SettingsManager.Instance.Output, SettingsManager.Instance.InputMap, singleTile)
                 ));
             BuilderRunning = false;
         }
@@ -391,12 +391,12 @@ namespace LandscapeBuilderGUI
         {
             LandscapeNames.Clear();
 
-            if (_landscapeBuilder.CondorDirectory != null)
+            if (SettingsManager.Instance.CondorLandscape != null)
             {
-                string[] landscapes = Directory.GetDirectories(_landscapeBuilder.CondorDirectory);
+                string[] landscapes = Directory.GetDirectories(SettingsManager.Instance.CondorLandscape);
                 foreach (string landscape in landscapes)
                 {
-                    LandscapeNames.Add(landscape.Substring(_landscapeBuilder.CondorDirectory.Length + 1));
+                    LandscapeNames.Add(landscape.Substring(SettingsManager.Instance.CondorLandscape.Length + 1));
                 }
             }
         }
@@ -421,7 +421,7 @@ namespace LandscapeBuilderGUI
         {
             if(width > 0 && height > 0)
             {
-                QGISString = _landscapeBuilder.GetAtlasString(width, height);
+                QGISString = Utilities.GetAtlasString(width, height);
             }
             else
             {

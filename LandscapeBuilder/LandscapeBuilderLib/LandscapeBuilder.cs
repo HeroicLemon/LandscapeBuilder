@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 namespace LandscapeBuilderLib
 {
     #region Enums
-    enum MapColor : uint
+    public enum MapColor : uint
     {
         // National Land Coverage Data
         DevelopedOpenSpace = 0xffddc9c9,       // 21
@@ -62,7 +62,7 @@ namespace LandscapeBuilderLib
         Mixed = 0x03
     }
 
-    enum RunwayCorner : int
+    public enum RunwayCorner : int
     {
         TopLeft,
         TopRight,
@@ -81,11 +81,6 @@ namespace LandscapeBuilderLib
         private Color _defaultColor;
         private const int heightmapResolution = 30;
 
-        public string OutputDirectory {  get { return SettingsManager.Instance.Output; } set { SettingsManager.Instance.Output = value; } }
-        public string InputDirectory { get { return SettingsManager.Instance.InputMap; } set { SettingsManager.Instance.InputMap = value; } }
-        public string CondorDirectory {  get { return SettingsManager.Instance.CondorLandscape; } }
-        public string LandscapeName { get { return SettingsManager.Instance.LandscapeName; } set { SettingsManager.Instance.LandscapeName = value; } }
-
         private string _outputText = null;
         public string OutputText { get { return _outputText; } }
 
@@ -94,8 +89,8 @@ namespace LandscapeBuilderLib
             _outputText = outputToConsole ? null : string.Empty;
             SettingsManager.Instance.InitSettings();
             InitializeAirports();
-            
-            //generateAirports();
+
+            generateAirports();
         }
 
         // genDDS determines if nvdxt.exe is used to build the DDS files actually used as textures by Condor.
@@ -133,7 +128,7 @@ namespace LandscapeBuilderLib
                 }
                 else
                 {
-                    WriteLine(string.Format("{0} not found, using default of {1}", atlasDir, SettingsManager.Instance.InputMap), ref _outputText);
+                    Utilities.WriteLine(string.Format("{0} not found, using default of {1}", atlasDir, SettingsManager.Instance.InputMap), ref _outputText);
                 }
             }
 
@@ -147,7 +142,7 @@ namespace LandscapeBuilderLib
             {
                 _outputText = string.Empty;
             }
-            WriteLine("Beginning Processing...", ref _outputText);
+            Utilities.WriteLine("Beginning Processing...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
             // Create the intermediary outputs.
@@ -178,7 +173,7 @@ namespace LandscapeBuilderLib
             }
 
             elapsed.Stop();
-            WriteLine(string.Format("Finished processing! Total elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+            Utilities.WriteLine(string.Format("Finished processing! Total elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
         }
 
         private void getLandscapeWidthAndHeight()
@@ -210,7 +205,7 @@ namespace LandscapeBuilderLib
         private void buildTile(string strFile)
         { 
             string tileName = Path.GetFileNameWithoutExtension(strFile);
-            Write(string.Format("Processing tile {0}...", tileName), ref _outputText);
+            Utilities.Write(string.Format("Processing tile {0}...", tileName), ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
             // Load the input map.
@@ -262,7 +257,7 @@ namespace LandscapeBuilderLib
             thermalOutput.Dispose();
 
             elapsed.Stop();
-            WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+            Utilities.WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
         }
 
         // Splits a tile into its 16 patches.
@@ -312,7 +307,7 @@ namespace LandscapeBuilderLib
             foreach(string file in mapFiles)
             {
                 string tileName = Path.GetFileNameWithoutExtension(file).Substring(1);
-                Write(string.Format("Generating forest file for tile {0}...", tileName), ref _outputText);
+                Utilities.Write(string.Format("Generating forest file for tile {0}...", tileName), ref _outputText);
                 Stopwatch elapsed = Stopwatch.StartNew();
 
                 Bitmap deciduousTile = new Bitmap(file);
@@ -363,14 +358,14 @@ namespace LandscapeBuilderLib
                     File.WriteAllBytes(path, forestData);
                 }
                 elapsed.Stop();
-                WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+                Utilities.WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
             }
         }
 
         // Generates the terrain and forest hashes. This program does not alter the terrain, but it does alter the forests so this needs to be done.
         private void generateHashes()
         {
-            Write("Generating hashes...", ref _outputText);
+            Utilities.Write("Generating hashes...", ref _outputText);
 
             Process process = new Process();
             process.StartInfo.FileName = "LandscapeEditor.exe";
@@ -388,18 +383,18 @@ namespace LandscapeBuilderLib
                     process.BeginOutputReadLine();
                 }
                 process.WaitForExit();
-                WriteLine("Done!", ref _outputText);
+                Utilities.WriteLine("Done!", ref _outputText);
             }
             catch (System.ComponentModel.Win32Exception)
             {
-                WriteLine(string.Format("Failed to generate hashes. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable), ref _outputText);
+                Utilities.WriteLine(string.Format("Failed to generate hashes. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable), ref _outputText);
             }
         }
 
         // Generates the actual DDS texture files.
         private void generateDDS()
         {
-            WriteLine("Generating DDS...", ref _outputText);
+            Utilities.WriteLine("Generating DDS...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
             Process process = new Process();
@@ -419,12 +414,12 @@ namespace LandscapeBuilderLib
                 process.WaitForExit();
 
                 elapsed.Stop();
-                WriteLine(string.Format("Done! Elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+                Utilities.WriteLine(string.Format("Done! Elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
             }
             catch (System.ComponentModel.Win32Exception)
             {
                 elapsed.Stop();
-                WriteLine(string.Format("Failed to generate DDS. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable), ref _outputText);
+                Utilities.WriteLine(string.Format("Failed to generate DDS. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable), ref _outputText);
             }
         }
 
@@ -432,7 +427,7 @@ namespace LandscapeBuilderLib
         // Again, it may be faster to do this during generation instead of spitting out the intermediary bitmaps, but this only adds a little bit of time.
         private void generateThermalMap()
         {
-            Write("Building thermal map...", ref _outputText);
+            Utilities.Write("Building thermal map...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
             string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.OutputThermalMapTiles, "*.bmp", SearchOption.TopDirectoryOnly);
@@ -449,13 +444,13 @@ namespace LandscapeBuilderLib
             thermalMap.Save(Path.Combine(SettingsManager.Instance.OutputThermalMap, "ThermalMap.bmp"));
 
             elapsed.Stop();
-            WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+            Utilities.WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
         }
 
         // Generates the .tdm thermal file from the map.
         private void generateThermalFile()
         {
-            Write("Generating thermal file...", ref _outputText);
+            Utilities.Write("Generating thermal file...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
             BitmapWrapper thermalMap = new BitmapWrapper(Path.Combine(SettingsManager.Instance.OutputThermalMap, "ThermalMap.bmp"));
@@ -483,7 +478,7 @@ namespace LandscapeBuilderLib
             File.WriteAllBytes(path, tdmData);
 
             elapsed.Stop();
-            WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+            Utilities.WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
         }
 
         // Generates the .apt airport file and flattens the terrain in the .tr3 files.
@@ -675,29 +670,29 @@ namespace LandscapeBuilderLib
         private void initializeDefaultTextures()
         {
             // NLCD values
-            Textures.Add(mapColorToColor(MapColor.Grassland), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-grass-green.jpg"), thermalColorToColor(ThermalColor.Moderate), "NLCD Grassland", ForestType.None, false, true));
-            Textures.Add(mapColorToColor(MapColor.DevelopedHighIntensity), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-heavy-urban.jpg"), thermalColorToColor(ThermalColor.Best), "NLCD Developed, High Intensity"));
-            Textures.Add(mapColorToColor(MapColor.DevelopedMediumIntensity), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-medium-urban-grass-green.jpg"), thermalColorToColor(ThermalColor.Best), "NLCD Developed, Medium Intensity"));
-            Textures.Add(mapColorToColor(MapColor.DevelopedLowIntensity), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Euro-city-farm1-mixed-forest.jpg"), thermalColorToColor(ThermalColor.Weak), "NLCD Developed, Low Itensity"));
-            Textures.Add(mapColorToColor(MapColor.DevelopedOpenSpace), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Euro-city-farm1-mixed-forest.jpg"), thermalColorToColor(ThermalColor.Weak), "NLCD Developed, Open Space"));
-            Textures.Add(mapColorToColor(MapColor.CultivatedCrops), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-european-farm-1.jpg"), thermalColorToColor(ThermalColor.Best), "NLCD Cultivated Crops"));
-            Textures.Add(mapColorToColor(MapColor.Pasture), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-european-farm-1.jpg"), thermalColorToColor(ThermalColor.Best), "NLCD Pasture/Hay"));
-            Textures.Add(mapColorToColor(MapColor.ForestConiferous), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-forest-mixed-mixed-wilderness-3.jpg"), thermalColorToColor(ThermalColor.Weak), "NLCD Evergreen Forest", ForestType.Coniferous));
-            Textures.Add(mapColorToColor(MapColor.ForestDeciduous), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-forest-mixed-mixed-wilderness-3.jpg"), thermalColorToColor(ThermalColor.Weak), "NLCD Deciduous Forest", ForestType.Deciduous));
-            Textures.Add(mapColorToColor(MapColor.ForestMixed), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-forest-mixed-mixed-wilderness-3.jpg"), thermalColorToColor(ThermalColor.Weak), "NLCD Mixed Forest", ForestType.Mixed));
-            Textures.Add(mapColorToColor(MapColor.WetlandsEmergent), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-swamp.jpg"), thermalColorToColor(ThermalColor.None), "NLCD Emergent Wetlands"));
-            Textures.Add(mapColorToColor(MapColor.WetlandsWoody), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-swamp.jpg"), thermalColorToColor(ThermalColor.None), "NLCD Woody Wetlands"));
-            Textures.Add(mapColorToColor(MapColor.BarrenLand), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Western-barren2.jpg"), thermalColorToColor(ThermalColor.Moderate), "NLCD Barren Land (Rock/Sand/Clay)"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.Grassland), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-grass-green.jpg"), Utilities.ThermalColorToColor(ThermalColor.Moderate), "NLCD Grassland", ForestType.None, false, true));
+            Textures.Add(Utilities.MapColorToColor(MapColor.DevelopedHighIntensity), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-heavy-urban.jpg"), Utilities.ThermalColorToColor(ThermalColor.Best), "NLCD Developed, High Intensity"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.DevelopedMediumIntensity), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-medium-urban-grass-green.jpg"), Utilities.ThermalColorToColor(ThermalColor.Best), "NLCD Developed, Medium Intensity"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.DevelopedLowIntensity), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Euro-city-farm1-mixed-forest.jpg"), Utilities.ThermalColorToColor(ThermalColor.Weak), "NLCD Developed, Low Itensity"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.DevelopedOpenSpace), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Euro-city-farm1-mixed-forest.jpg"), Utilities.ThermalColorToColor(ThermalColor.Weak), "NLCD Developed, Open Space"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.CultivatedCrops), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-european-farm-1.jpg"), Utilities.ThermalColorToColor(ThermalColor.Best), "NLCD Cultivated Crops"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.Pasture), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-european-farm-1.jpg"), Utilities.ThermalColorToColor(ThermalColor.Best), "NLCD Pasture/Hay"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.ForestConiferous), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-forest-mixed-mixed-wilderness-3.jpg"), Utilities.ThermalColorToColor(ThermalColor.Weak), "NLCD Evergreen Forest", ForestType.Coniferous));
+            Textures.Add(Utilities.MapColorToColor(MapColor.ForestDeciduous), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-forest-mixed-mixed-wilderness-3.jpg"), Utilities.ThermalColorToColor(ThermalColor.Weak), "NLCD Deciduous Forest", ForestType.Deciduous));
+            Textures.Add(Utilities.MapColorToColor(MapColor.ForestMixed), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-forest-mixed-mixed-wilderness-3.jpg"), Utilities.ThermalColorToColor(ThermalColor.Weak), "NLCD Mixed Forest", ForestType.Mixed));
+            Textures.Add(Utilities.MapColorToColor(MapColor.WetlandsEmergent), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-swamp.jpg"), Utilities.ThermalColorToColor(ThermalColor.None), "NLCD Emergent Wetlands"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.WetlandsWoody), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-swamp.jpg"), Utilities.ThermalColorToColor(ThermalColor.None), "NLCD Woody Wetlands"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.BarrenLand), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Western-barren2.jpg"), Utilities.ThermalColorToColor(ThermalColor.Moderate), "NLCD Barren Land (Rock/Sand/Clay)"));
 
             // Other
-            Textures.Add(mapColorToColor(MapColor.Aerodrome), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-grass-green.jpg"), thermalColorToColor(ThermalColor.Moderate), "Aerodrome"));
-            Textures.Add(mapColorToColor(MapColor.Runway), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-road-top.jpg"), thermalColorToColor(ThermalColor.Best), "Hard surface runways"));
-            Textures.Add(mapColorToColor(MapColor.RunwayGrass), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-grass-yellow.jpg"), thermalColorToColor(ThermalColor.Moderate), "Grass runways"));
-            Textures.Add(mapColorToColor(MapColor.RunwayDirt), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Western-barren-canyon-dirt.jpg"), thermalColorToColor(ThermalColor.Moderate), "Dirt runways"));
-            Textures.Add(mapColorToColor(MapColor.RoadPaved), new ColoredLandData(mapColorToColor(MapColor.RoadPaved), thermalColorToColor(ThermalColor.Best), "Paved roads"));
-            Textures.Add(mapColorToColor(MapColor.RoadGravel), new ColoredLandData(mapColorToColor(MapColor.RoadGravel), thermalColorToColor(ThermalColor.Weak), "Gravel roads"));
-            Textures.Add(mapColorToColor(MapColor.RoadDirt), new ColoredLandData(mapColorToColor(MapColor.RoadDirt), thermalColorToColor(ThermalColor.Weak), "Dirt roads"));
-            Textures.Add(mapColorToColor(MapColor.Water), new ColoredLandData(Color.FromArgb(0xff, 0x2a, 0x47, 0x4d), thermalColorToColor(ThermalColor.None), "Water", ForestType.None, true));
+            Textures.Add(Utilities.MapColorToColor(MapColor.Aerodrome), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-grass-green.jpg"), Utilities.ThermalColorToColor(ThermalColor.Moderate), "Aerodrome"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.Runway), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-road-top.jpg"), Utilities.ThermalColorToColor(ThermalColor.Best), "Hard surface runways"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.RunwayGrass), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-grass-yellow.jpg"), Utilities.ThermalColorToColor(ThermalColor.Moderate), "Grass runways"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.RunwayDirt), new TexturedLandData(Path.GetFullPath(@"Textures/HITW-TS2-Western-barren-canyon-dirt.jpg"), Utilities.ThermalColorToColor(ThermalColor.Moderate), "Dirt runways"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.RoadPaved), new ColoredLandData(Utilities.MapColorToColor(MapColor.RoadPaved), Utilities.ThermalColorToColor(ThermalColor.Best), "Paved roads"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.RoadGravel), new ColoredLandData(Utilities.MapColorToColor(MapColor.RoadGravel), Utilities.ThermalColorToColor(ThermalColor.Weak), "Gravel roads"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.RoadDirt), new ColoredLandData(Utilities.MapColorToColor(MapColor.RoadDirt), Utilities.ThermalColorToColor(ThermalColor.Weak), "Dirt roads"));
+            Textures.Add(Utilities.MapColorToColor(MapColor.Water), new ColoredLandData(Color.FromArgb(0xff, 0x2a, 0x47, 0x4d), Utilities.ThermalColorToColor(ThermalColor.None), "Water", ForestType.None, true));
             SaveTextures();
         }
 
@@ -718,84 +713,7 @@ namespace LandscapeBuilderLib
             File.WriteAllText(Path.Combine(SettingsManager.Instance.AppData, "airports.conf"), json);
         }
 
-        private Color thermalColorToColor(ThermalColor thermalColor)
-        {
-            return uintToColor((uint)thermalColor);
-        }
 
-        private Color mapColorToColor(MapColor mapColor)
-        {
-            return uintToColor((uint)mapColor);
-        }
 
-        private Color uintToColor(uint color)
-        {
-            byte a = (byte)(color >> 24);
-            byte r = (byte)(color >> 16);
-            byte g = (byte)(color >> 8);
-            byte b = (byte)(color >> 0);
-
-            return Color.FromArgb(a, r, g, b);
-        }
-
-        private Color changeColorBrightness(Color color, float correctionFactor)
-        {
-            float red = (float)color.R;
-            float green = (float)color.G;
-            float blue = (float)color.B;
-
-            if (correctionFactor < 0)
-            {
-                correctionFactor = 1 + correctionFactor;
-                red *= correctionFactor;
-                green *= correctionFactor;
-                blue *= correctionFactor;
-            }
-            else
-            {
-                red = (255 - red) * correctionFactor + red;
-                green = (255 - green) * correctionFactor + green;
-                blue = (255 - blue) * correctionFactor + blue;
-            }
-
-            return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
-        }
-
-        private void WriteLine(string text, ref string outputText)
-        {
-            Write(text + Console.Out.NewLine, ref outputText);
-        }
-
-        // Either outputs to the console or appends to OutputText, depending on if using the CLI or GUI.
-        private void Write(string text, ref string outputText)
-        {
-            if(outputText == null)
-            {
-                Console.Write(text);
-            }
-            else
-            {
-                outputText += text;
-            }
-        }
-
-        // Returns a string that can be used to output properly named tiles from QGIS's Atlas layout.
-        // Doesn't really belong here, but it's a small function so whatever.
-        public string GetAtlasString(int width, int height)
-        {
-            string atlasString = string.Empty;
-
-            for(int i = width - 1; i >= 0; i--)
-            {
-                for(int j = height - 1; j >= 0; j--)
-                {
-                    string tileName = string.Format("{0:00}{1:00}", i, j);
-                    atlasString += string.Format(",'{0}'", tileName);
-                }
-            }
-
-            // @atlas_featurenumber starts a 1, so we need to add a zeroth entry before adding the string we built above.
-            return string.Format("array_get(array('0'{0}), @atlas_featurenumber)", atlasString);
-        }
     }
 }
