@@ -61,6 +61,14 @@ namespace LandscapeBuilderLib
         Deciduous = 0x02,
         Mixed = 0x03
     }
+
+    enum RunwayCorner : int
+    {
+        TopLeft,
+        TopRight,
+        BottomRight,
+        BottomLeft
+    }
     #endregion
 
     public class LandscapeBuilder
@@ -70,7 +78,9 @@ namespace LandscapeBuilderLib
         private string _singleTile;
 
         public Dictionary<Color, LandData> Textures { get; set; } = new Dictionary<Color, LandData>();
+        public List<Airport> Airports { get; set; }
         private Color _defaultColor;
+        private const int heightmapResolution = 30;
 
         public string OutputDirectory {  get { return _directoryManager.Output; } set { _directoryManager.Output = value; } }
         public string InputDirectory { get { return _directoryManager.InputMap; } set { _directoryManager.InputMap = value; } }
@@ -85,41 +95,10 @@ namespace LandscapeBuilderLib
         {
             _outputToConsole = outputToConsole;
             InitializeDirectories();
+            InitializeAirports();
 
-            //FAANASRRunwayParser parser = new FAANASRRunwayParser();
-            //List<Airport> airports = parser.Parse();
-
-            //byte[] bytes = null;
-            //foreach (Airport airport in airports)
-            //{
-            //    if (bytes == null)
-            //    {
-            //        bytes = airport.GetBytes();
-            //    }
-            //    else
-            //    {
-            //        bytes = bytes.Concat(airport.GetBytes()).ToArray();
-            //    }
-            //}
-
-            FAAShapefileRunwayParser parser2 = new FAAShapefileRunwayParser();
-            List<Airport> airports2 = parser2.Parse();
-
-            byte[] bytes2 = null;
-            foreach (Airport airport in airports2)
-            {
-                if (bytes2 == null)
-                {
-                    bytes2 = airport.GetBytes();
-                }
-                else
-                {
-                    bytes2 = bytes2.Concat(airport.GetBytes()).ToArray();
-                }
-            }
-
-            File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes2);
-
+            _landscapeName = "CentralVA";
+            generateAirports();
         }
 
         // landscapeName is the name of the landscape in Condor. It is used for naming some files (e.g., [LandscapeName].tdm) and, if outputToCondor is true, determines where to write the final files.
@@ -456,7 +435,8 @@ namespace LandscapeBuilderLib
                 process.StartInfo.Arguments = string.Format("-hash {0}", _landscapeName);
                 process.StartInfo.UseShellExecute = false;
                 process.StartInfo.RedirectStandardOutput = _outputToConsole;
-                process.OutputDataReceived += new DataReceivedEventHandler(processOutput);
+                process.StartInfo.CreateNoWindow = true;
+                process.OutputDataReceived += new DataReceivedEventHandler(processOutput);           
 
                 try
                 {
@@ -566,6 +546,236 @@ namespace LandscapeBuilderLib
             writeLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds));
         }
 
+        // Generates the .apt airport file and flattens the terrain in the .tr3 files.
+        private void generateAirports()
+        {
+            byte[] bytes = null;
+            foreach (Airport airport in Airports)
+            {
+                // Combine all of the bytes to use for the .apt file
+                if (bytes == null)
+                {
+                    bytes = airport.GetBytes();
+                }
+                else
+                {
+                    bytes = bytes.Concat(airport.GetBytes()).ToArray();
+                }
+
+                // If we have data for the corners, also flatten the terrain.
+                // TODO: Maybe spit out the airports that were missing data to alert the user as to which ones need to be done manually?
+                if(airport.RunwayCorners != null && airport.Name == "Hanover Co Muni")
+                {
+                    flattenTerrain(airport.RunwayCorners, airport.Altitude);
+                }
+            }
+
+            // Write to .apt file.
+            File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
+        }
+
+        // Flattens the area containing the rectangle specified in corners to the given elevation.
+        // Updates the .tr3 heightmap files.
+        private void flattenTerrain(PointF[] cornersLatLong, float elevation)
+        {            
+            Point[] cornersLandscapeXY = new Point[cornersLatLong.Length];
+            bool missingCoCoCo = false;
+            for(int i = 0; i < cornersLatLong.Length; i++)
+            {
+                // TODO: This is assuming that 0 is TL, 1 is TR, 2 is BR and 3 is BL. Need to confirm this is true for all cases.
+                // Convert lat/long to the landscape's XY coordinates.
+                cornersLandscapeXY[i] = latLongToLandscapeXY(cornersLatLong[i], (RunwayCorner)i, ref missingCoCoCo);
+
+                if(missingCoCoCo)
+                {
+                    break;
+                }
+            }
+
+            // Check to see if we managed to get the new points.
+            if(!cornersLandscapeXY.Contains(new Point(-1, -1)))
+            {
+                Point topLeft = cornersLandscapeXY[(int)RunwayCorner.TopLeft];
+                Point bottomLeft = cornersLandscapeXY[(int)RunwayCorner.BottomLeft];
+                Point bottomRight = cornersLandscapeXY[(int)RunwayCorner.BottomRight];
+                Point topRight = cornersLandscapeXY[(int)RunwayCorner.TopRight];
+
+                // This is the list of point that make up the outline of the region that needs to be flattened.
+                List<PointF> boundingPoints = new List<PointF>();
+                List<byte> boundingTypes = new List<byte>();
+
+                // Calculate the slopes
+                double leftSlope = getSlope(topLeft, bottomLeft);
+                double bottomSlope = getSlope(bottomLeft, bottomRight);
+                double rightSlope = getSlope(bottomRight, topRight);
+                double topSlope = getSlope(topRight, topLeft);
+
+                int x2, y2;
+                // First add the top left point.
+                boundingPoints.Add(topLeft);      
+                
+                // Then add the points along the left side of the runway.
+                y2 = topLeft.Y;
+                while(y2 > bottomLeft.Y)
+                {
+                    // Go to the next Y intercept and figure out the X coordinate
+                    y2 -= heightmapResolution;
+                    x2 = roundUpToHeightMapRes(((y2 - topLeft.Y) / leftSlope) + topLeft.X);
+                    boundingPoints.Add(new PointF(x2, y2));
+                }
+
+                // Then add the bottom left point.
+                boundingPoints.Add(bottomLeft);
+
+                // Then add the points along the bottom of the runway.
+                x2 = bottomLeft.X;
+                while(x2 > bottomRight.X)
+                {
+                    x2 -= heightmapResolution;
+                    y2 = roundDownToHeightMapRes((x2 - bottomLeft.X) * bottomSlope + bottomLeft.Y);
+                    boundingPoints.Add(new PointF(x2, y2));
+                }
+
+                // Then add the bottom right point.
+                boundingPoints.Add(bottomRight);
+
+                // Then add the points along the right side of the runway.
+                y2 = bottomRight.Y;
+                while(y2 < topRight.Y)
+                {
+                    y2 += heightmapResolution;
+                    x2 = roundDownToHeightMapRes(((y2 - bottomRight.Y) / rightSlope) + bottomRight.X);
+                    boundingPoints.Add(new PointF(x2, y2));
+                }
+
+                // Then add the top right point
+                boundingPoints.Add(topRight);
+
+                // Then add the points along the top side of the runway.
+                x2 = topRight.X;
+                while(x2 < topLeft.X)
+                {
+                    x2 += heightmapResolution;
+                    y2 = roundUpToHeightMapRes((x2 - topRight.X) * topSlope + topRight.Y);
+                    boundingPoints.Add(new PointF(x2, y2));
+                }
+
+                // TODO: This gets me the boundary...is there a way to fill it in while determining it?
+                string testing = string.Empty;
+                foreach(PointF point in boundingPoints)
+                {
+                    testing += string.Format("-{0},{1}\n", point.X, point.Y);
+                }
+
+                int i = 0;
+            }
+        }
+
+        private double getSlope(Point p1, Point p2)
+        {
+            return (double)(p2.Y - p1.Y) / (double)(p2.X - p1.X);
+        }
+
+        // Uses CoCoCo to translate the lat/long corners into the landscape's XY coordinates.
+        private Point latLongToLandscapeXY(PointF latLong, RunwayCorner corner, ref bool missingCoCoCo)
+        {
+            Point landscapeXY = new Point(-1, -1);
+
+            Process process = new Process();
+            process.StartInfo.FileName = "CoCoCo.exe";
+            process.StartInfo.Arguments = string.Format("{0} {1} {2}", _landscapeName, latLong.Y, latLong.X);
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.CreateNoWindow = true;
+
+            // Make sure working directory is set up properly so that CoTaCo.ini can be parsed.
+            if(!File.Exists(Path.Combine(_directoryManager.Executable, process.StartInfo.FileName)))
+            {
+                foreach(string path in Environment.GetEnvironmentVariable("PATH").Split(';'))
+                {
+                    if(File.Exists(Path.Combine(path, process.StartInfo.FileName)))
+                    {
+                        process.StartInfo.WorkingDirectory = path;
+                        break;
+                    }
+                }
+            }
+
+            try
+            {
+                process.Start();
+
+                float posX = float.MinValue;
+                float posY = float.MinValue;
+                while (!process.StandardOutput.EndOfStream)
+                {
+                    string line = process.StandardOutput.ReadLine();
+                    if (line.Contains("TPPosX"))
+                    {
+                        float.TryParse(line.Substring(line.IndexOf('=') + 1), out posX);
+                    }
+                    else if (line.Contains("TPPosY"))
+                    {
+                        float.TryParse(line.Substring(line.IndexOf('=') + 1), out posY);
+                    }
+                }
+
+                process.WaitForExit();
+
+
+                if (posX > float.MinValue && posY > float.MinValue)
+                {
+                    // Round outwards to the nearest value divisible by the heightmap's resolution.
+                    switch (corner)
+                    {
+                        case RunwayCorner.TopLeft:
+                            {
+                                landscapeXY.X = roundUpToHeightMapRes(posX);
+                                landscapeXY.Y = roundUpToHeightMapRes(posY);
+                            }
+                            break;
+                        case RunwayCorner.TopRight:
+                            {
+                                landscapeXY.X = roundDownToHeightMapRes(posX);
+                                landscapeXY.Y = roundUpToHeightMapRes(posY);
+                            }
+                            break;
+                        case RunwayCorner.BottomRight:
+                            {
+                                landscapeXY.X = roundDownToHeightMapRes(posX);
+                                landscapeXY.Y = roundDownToHeightMapRes(posY);
+                            }
+                            break;
+                        case RunwayCorner.BottomLeft:
+                            {
+                                landscapeXY.X = roundUpToHeightMapRes(posX);
+                                landscapeXY.Y = roundDownToHeightMapRes(posY);
+                            }
+                            break; 
+                    }
+                }
+            }
+            catch (System.ComponentModel.Win32Exception)
+            {
+                missingCoCoCo = true;
+                writeLine(string.Format("Failed to run {0}. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, _directoryManager.Executable));
+            }
+
+            return landscapeXY;
+        }
+
+        // Rounds up to the nearest X or Y coordinate for the heightmap resolution.
+        private int roundUpToHeightMapRes(double val)
+        {
+            return (int)Math.Ceiling(val / heightmapResolution) * heightmapResolution;
+        }
+
+        // Rounds down to the nearest X or Y coordinate for the heightmap resolution.
+        private int roundDownToHeightMapRes(double val)
+        {
+            return (int)Math.Floor(val / heightmapResolution) * heightmapResolution;
+        }
+
         private Point getTileCoordinatesFromName(string tileName)
         {
             int tileX = int.Parse(tileName.Substring(0, 2));
@@ -595,6 +805,21 @@ namespace LandscapeBuilderLib
             {
                 // Save the default directories.
                 SaveDirectories();
+            }
+        }
+
+        public void InitializeAirports()
+        {
+            if (File.Exists(Path.Combine(_directoryManager.AppData, "airports.conf")))
+            {
+                string json = File.ReadAllText(Path.Combine(_directoryManager.AppData, "airports.conf"));
+                Airports = JsonConvert.DeserializeObject<List<Airport>>(json);
+            }
+            else
+            {
+                FAAShapefileRunwayParser parser = new FAAShapefileRunwayParser();
+                Airports = parser.Parse();
+                //SaveAirports();
             }
         }
 
@@ -662,6 +887,12 @@ namespace LandscapeBuilderLib
             File.WriteAllText(Path.Combine(_directoryManager.AppData, "directories.conf"), json);
         }
 
+        public void SaveAirports()
+        {
+            string json = JsonConvert.SerializeObject(Airports, Formatting.Indented);
+            File.WriteAllText(Path.Combine(_directoryManager.AppData, "airports.conf"), json);
+        }
+
         private Color thermalColorToColor(ThermalColor thermalColor)
         {
             return uintToColor((uint)thermalColor);
@@ -710,6 +941,7 @@ namespace LandscapeBuilderLib
             write(text + Console.Out.NewLine);
         }
 
+        // Either outputs to the console or appends to OutputText, depending on if using the CLI or GUI.
         private void write(string text)
         {
             if(_outputToConsole)

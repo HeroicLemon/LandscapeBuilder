@@ -63,12 +63,7 @@ namespace LandscapeBuilderLib
                                     string test = runwayReader["base_runway_end_true_alignment"].ToString();
                                     int direction = int.Parse(runwayReader["base_runway_end_true_alignment"].ToString());
                                     int length = (int)feetToMeters(float.Parse(runwayReader["runway_physical_runway_length_nearest_foot"].ToString()));
-                                    int width = (int)feetToMeters(float.Parse(runwayReader["runway_physical_runway_width_nearest_foot"].ToString())); ;
-
-                                    if(name.Contains("Merlin"))
-                                    {
-                                        int i = 0;
-                                    }
+                                    int width = (int)feetToMeters(float.Parse(runwayReader["runway_physical_runway_width_nearest_foot"].ToString()));
                                 }
                             }
                         }
@@ -119,7 +114,8 @@ namespace LandscapeBuilderLib
             PointShapefile airportShapefile = new PointShapefile(airportShapeFilePath);
 
             // It'd be nice to limit the airports to just those within the extents of the landscape, but I don't think that's possible as lat/long are text fields...
-            List<IFeature> airportFeatures = airportShapefile.SelectByAttribute("STATE='VA' AND TYPE_CODE='AD'");
+            // TODO: It may be possible to do that with the spatialite database.
+            List<IFeature> airportFeatures = airportShapefile.SelectByAttribute("TYPE_CODE='AD'");
             foreach (Feature airportFeature in airportFeatures)
             {
                 DotSpatial.Topology.Point airportPoint = airportFeature.BasicGeometry as DotSpatial.Topology.Point;
@@ -161,14 +157,24 @@ namespace LandscapeBuilderLib
 
                     bool asphalt = isAsphalt((string)runwayFeature.DataRow["COMP_CODE"]);
 
-                    airports.Add(new Airport(name, latitude, longitude, altitude, direction, length, width, asphalt));
+                    PointF[] corners = null;
+                    if (coordinateWithinExtent(runwayFeature.Coordinates.FirstOrDefault()))
+                    {
+                        corners = new PointF[4];
+                        for (int i = 0; i < corners.Length; i++)
+                        {
+                            corners[i] = new PointF((float)runwayFeature.Coordinates[i].X, (float)runwayFeature.Coordinates[i].Y);
+                        }
+                    }
+
+                    airports.Add(new Airport(name, latitude, longitude, altitude, direction, length, width, asphalt, corners));
                 }
             }
 
             return airports;
         }
 
-        private bool coordinateWithinExtent(DotSpatial.Topology.Coordinate coordinate)
+        private bool coordinateWithinExtent(Coordinate coordinate)
         {
             return coordinate.Y < _top && coordinate.Y > _bottom && coordinate.X < _right && coordinate.X > _left;
         }
@@ -214,14 +220,15 @@ namespace LandscapeBuilderLib
                         while (airportReader.Read())
                         {
                             string landing_facility_site_number = airportReader["landing_facility_site_number"].ToString();
-                            string selectRunways = string.Format("SELECT * FROM APT_RWY WHERE landing_facility_site_number = '{0}' AND base_end_identifier = '{1}'", landing_facility_site_number, designator);
+                            string selectRunways = string.Format("SELECT * FROM APT_RWY WHERE landing_facility_site_number = '{0}' AND (base_end_identifier = '{1}' OR reciprocal_end_identifier = '{1}')", landing_facility_site_number, designator);
                             using (SQLiteCommand runwayCommand = new SQLiteCommand(selectRunways, connection))
                             {
                                 using (SQLiteDataReader runwayReader = runwayCommand.ExecuteReader())
                                 {
-                                    while (runwayReader.Read())
+                                    runwayReader.Read();
+                                    string alignment = runwayReader["base_runway_end_true_alignment"].ToString();
+                                    if (alignment != string.Empty)
                                     {
-                                        string alignment = runwayReader["base_runway_end_true_alignment"].ToString();
                                         int.TryParse(alignment, out direction);
                                     }
                                 }
@@ -288,14 +295,18 @@ namespace LandscapeBuilderLib
                             {
                                 // Pull any letters out
                                 designator = Regex.Replace(designator, "[^0-9.]", "");
-                                int.TryParse(designator, out direction);
+                                if(int.TryParse(designator, out direction))
+                                {
+                                    direction *= 10;
+                                }
                             }
                             break;
                     }
                 }
             }
 
-            return direction;
+            // For some reason, incrementing the direction by 2 degrees gets better results in most cases.
+            return direction += 2;
         }
 
         // TODO: This mostly works, but I think I need to account for magnetic variation.

@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 
 namespace LandscapeBuilderLib
 {
-    class Airport
+    public sealed class Airport
     {
         private enum Offset
         {
@@ -36,7 +37,10 @@ namespace LandscapeBuilderLib
         public bool TowPrimaryLeftSide { get; private set; }
         public bool TowSecondaryLeftSide { get; private set; }
 
-        public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, bool asphalt = false, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
+        // The lat/long of the four corners of the runway. Used for flattening the terrain around the runway.
+        public PointF[] RunwayCorners { get; private set; } 
+
+        public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, bool asphalt = false, PointF[] runwayCorners = null, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
         {
             Name = name;
             Latitude = latitude;
@@ -50,6 +54,7 @@ namespace LandscapeBuilderLib
             PrimaryDirectionReversed = primaryDirectionReversed;
             TowPrimaryLeftSide = towPrimaryLeftSide;
             TowSecondaryLeftSide = towSecondaryLeftSide;
+            RunwayCorners = runwayCorners;
         }
 
         public byte[] GetBytes()
