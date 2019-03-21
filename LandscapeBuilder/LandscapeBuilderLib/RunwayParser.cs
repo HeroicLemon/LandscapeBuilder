@@ -13,6 +13,7 @@ namespace LandscapeBuilderLib
     // TODO: This should be an interface, and it's more of an airport parser.
     abstract class RunwayParser
     {
+        // TODO: Should be able to pull these values from a file somewhere.
         protected float _top = 37.75f;
         protected float _left = -78.5f;
         protected float _bottom = 36.35f;
@@ -137,14 +138,14 @@ namespace LandscapeBuilderLib
                     // Otherwise, use the four corners of the runway to determine the center lat/long of the runway. 
                     else
                     {
-                        runwayCoordinate = getLatLongFromCorners(runwayFeature.Coordinates);
+                        runwayCoordinate = getCenterLatLongFromCorners(runwayFeature.Coordinates);
                         
                         // Some of the data in the shapefile is bad, with runways centered around 0, 0.
                         // If the result above is not within the extent, use the airport's coordinate and hope for the best.
                         if(!coordinateWithinExtent(runwayCoordinate))
                         {
                             runwayCoordinate = airportPoint.Coordinate;
-                        }                        
+                        }     
                     }
 
                     float latitude = (float)runwayCoordinate.Y;
@@ -238,10 +239,11 @@ namespace LandscapeBuilderLib
                 }
             }
 
+            // Check to see if we managed to get the direction from the NASR database.
             if(direction == int.MinValue)
             {
                 // If we can get valid lat/long from the corners, go ahead and get the direction as well.
-                if(coordinateWithinExtent(getLatLongFromCorners(runwayFeature.Coordinates)))
+                if(coordinateWithinExtent(getCenterLatLongFromCorners(runwayFeature.Coordinates)))
                 {
                     direction = getDirectionFromCorners(runwayFeature.Coordinates);
                 }
@@ -291,6 +293,7 @@ namespace LandscapeBuilderLib
                                 direction = 315;
                             }
                             break;
+                        // Calculate heading from runway number.
                         default:
                             {
                                 // Pull any letters out
@@ -324,14 +327,41 @@ namespace LandscapeBuilderLib
             return direction;
         }
 
-        private Coordinate getLatLongFromCorners(IList<Coordinate> corners)
+        private Coordinate getCenterLatLongFromCorners(IList<Coordinate> corners)
         {
-            // Get the average coordinates from two opposite corners.
-            // TODO: This may be inaccurate...might be OK considering the relatively short distances...
-            double latitude = (corners[0].Y + corners[2].Y) / 2;
-            double longitude = (corners[0].X + corners[2].X) / 2;
+            double x = 0;
+            double y = 0;
+            double z = 0;
 
-            return new Coordinate(longitude, latitude);
+            for(int i = 0; i < corners.Count - 1; i++)
+            {
+                // Convert to radians.
+                double latitude = corners[i].Y * Math.PI / 180;
+                double longitude = corners[i].X * Math.PI / 180;
+
+                // Get x, y and z component totals
+                x += Math.Cos(latitude) * Math.Cos(longitude);
+                y += Math.Cos(latitude) * Math.Sin(longitude);
+                z += Math.Sin(latitude);
+            }
+
+            int total = corners.Count - 1;
+
+            // Average x, y and z components.
+            x = x / total;
+            y = y / total;
+            z = z / total;
+
+            // Calculate latitude and longitude in radians.
+            double centralLongitude = Math.Atan2(y, x);
+            double centralSquareRoot = Math.Sqrt(x * x + y * y);
+            double centralLatitude = Math.Atan2(z, centralSquareRoot);
+
+            // Convert back to degrees
+            centralLatitude *= (180.0 / Math.PI);
+            centralLongitude *= (180.0 / Math.PI);
+
+            return new Coordinate(centralLongitude, centralLatitude);
         }
     }
 }
