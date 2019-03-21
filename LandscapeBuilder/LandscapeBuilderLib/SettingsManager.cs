@@ -39,8 +39,7 @@ namespace LandscapeBuilderLib
 
         [JsonProperty]
         public string LandscapeName { get; set; }
-
-
+               
         private static readonly Lazy<SettingsManager> lazy = new Lazy<SettingsManager>(() => new SettingsManager());
         public static SettingsManager Instance {  get { return lazy.Value; } }
 

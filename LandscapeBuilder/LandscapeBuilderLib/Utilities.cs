@@ -9,13 +9,13 @@ namespace LandscapeBuilderLib
 {
     public static class Utilities
     {
-        public static double GetSlope(Point p1, Point p2)
+        public static double GetSlope(PointF p1, PointF p2)
         {
             return (double)(p2.Y - p1.Y) / (double)(p2.X - p1.X);
         }
 
         // Uses CoCoCo to translate the lat/long corners into the landscape's XY coordinates.
-        public static PointF LatLongToLandscapeXY(PointF latLong, RunwayCorner corner, ref bool missingCoCoCo)
+        public static PointF LatLongToLandscapeXY(PointF latLong, ref bool missingCoCoCo)
         {
             PointF landscapeXY = new Point(-1, -1);
 
@@ -63,34 +63,7 @@ namespace LandscapeBuilderLib
 
                 if (posX > float.MinValue && posY > float.MinValue)
                 {
-                    // Round outwards to the nearest value divisible by the heightmap's resolution.
-                    switch (corner)
-                    {
-                        case RunwayCorner.TopLeft:
-                            {
-                                landscapeXY.X = posX;
-                                landscapeXY.Y = posY;
-                            }
-                            break;
-                        case RunwayCorner.TopRight:
-                            {
-                                landscapeXY.X = posX;
-                                landscapeXY.Y = posY;
-                            }
-                            break;
-                        case RunwayCorner.BottomRight:
-                            {
-                                landscapeXY.X = posX;
-                                landscapeXY.Y = posY;
-                            }
-                            break;
-                        case RunwayCorner.BottomLeft:
-                            {
-                                landscapeXY.X = posX;
-                                landscapeXY.Y = posY;
-                            }
-                            break;
-                    }
+                    landscapeXY = new PointF(posX, posY);
                 }
             }
             catch (System.ComponentModel.Win32Exception)

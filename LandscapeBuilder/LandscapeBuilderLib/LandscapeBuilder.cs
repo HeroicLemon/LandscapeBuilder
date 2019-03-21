@@ -79,7 +79,6 @@ namespace LandscapeBuilderLib
         public Dictionary<Color, LandData> Textures { get; set; } = new Dictionary<Color, LandData>();
         public List<Airport> Airports { get; set; }
         private Color _defaultColor;
-        private const int heightmapResolution = 30;
 
         private string _outputText = null;
         public string OutputText { get { return _outputText; } }
@@ -501,123 +500,13 @@ namespace LandscapeBuilderLib
                 // TODO: Maybe spit out the airports that were missing data to alert the user as to which ones need to be done manually?
                 if(airport.RunwayCorners != null && airport.Name == "Hanover Co Muni")
                 {
-                    flattenTerrain(airport.RunwayCorners, airport.Altitude);
+                    TerrainFlattener flattener = new TerrainFlattener(airport.RunwayCorners, airport.Altitude);
+                    List<string> strings = flattener.ToStringList();
                 }
             }
 
             // Write to .apt file.
             File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
-        }
-
-        // Flattens the area containing the rectangle specified in corners to the given elevation.
-        // Updates the .tr3 heightmap files.
-        private void flattenTerrain(PointF[] cornersLatLong, float elevation)
-        {            
-            Point[] cornersLandscapeXY = new Point[cornersLatLong.Length];
-            bool missingCoCoCo = false;
-            for(int i = 0; i < cornersLatLong.Length; i++)
-            {
-                // TODO: This is assuming that 0 is TL, 1 is TR, 2 is BR and 3 is BL. Need to confirm this is true for all cases.
-                // Convert lat/long to the landscape's XY coordinates.
-                PointF xy =  Utilities.LatLongToLandscapeXY(cornersLatLong[i], (RunwayCorner)i, ref missingCoCoCo);
-                // TODO: Now round to the nearest valid heightmap point.
-                //cornersLandscapeXY[i] =
-
-                if (missingCoCoCo)
-                {
-                    break;
-                }
-            }
-
-            // Check to see if we managed to get the new points.
-            if(!cornersLandscapeXY.Contains(new Point(-1, -1)))
-            {
-                Point topLeft = cornersLandscapeXY[(int)RunwayCorner.TopLeft];
-                Point bottomLeft = cornersLandscapeXY[(int)RunwayCorner.BottomLeft];
-                Point bottomRight = cornersLandscapeXY[(int)RunwayCorner.BottomRight];
-                Point topRight = cornersLandscapeXY[(int)RunwayCorner.TopRight];
-
-                // This is the list of point that make up the outline of the region that needs to be flattened.
-                List<PointF> boundingPoints = new List<PointF>();
-                List<byte> boundingTypes = new List<byte>();
-
-                // Calculate the slopes
-                double leftSlope = Utilities.GetSlope(topLeft, bottomLeft);
-                double bottomSlope = Utilities.GetSlope(bottomLeft, bottomRight);
-                double rightSlope = Utilities.GetSlope(bottomRight, topRight);
-                double topSlope = Utilities.GetSlope(topRight, topLeft);
-
-                int x2, y2;
-                // First add the top left point.
-                boundingPoints.Add(topLeft);      
-                
-                // Then add the points along the left side of the runway.
-                y2 = topLeft.Y;
-                while(y2 > bottomLeft.Y)
-                {
-                    // Go to the next Y intercept and figure out the X coordinate
-                    y2 -= heightmapResolution;
-                    x2 = roundUpToHeightMapRes(((y2 - topLeft.Y) / leftSlope) + topLeft.X);
-                    boundingPoints.Add(new PointF(x2, y2));
-                }
-
-                // Then add the bottom left point.
-                boundingPoints.Add(bottomLeft);
-
-                // Then add the points along the bottom of the runway.
-                x2 = bottomLeft.X;
-                while(x2 > bottomRight.X)
-                {
-                    x2 -= heightmapResolution;
-                    y2 = roundDownToHeightMapRes((x2 - bottomLeft.X) * bottomSlope + bottomLeft.Y);
-                    boundingPoints.Add(new PointF(x2, y2));
-                }
-
-                // Then add the bottom right point.
-                boundingPoints.Add(bottomRight);
-
-                // Then add the points along the right side of the runway.
-                y2 = bottomRight.Y;
-                while(y2 < topRight.Y)
-                {
-                    y2 += heightmapResolution;
-                    x2 = roundDownToHeightMapRes(((y2 - bottomRight.Y) / rightSlope) + bottomRight.X);
-                    boundingPoints.Add(new PointF(x2, y2));
-                }
-
-                // Then add the top right point
-                boundingPoints.Add(topRight);
-
-                // Then add the points along the top side of the runway.
-                x2 = topRight.X;
-                while(x2 < topLeft.X)
-                {
-                    x2 += heightmapResolution;
-                    y2 = roundUpToHeightMapRes((x2 - topRight.X) * topSlope + topRight.Y);
-                    boundingPoints.Add(new PointF(x2, y2));
-                }
-
-                // TODO: This gets me the boundary...is there a way to fill it in while determining it?
-                string testing = string.Empty;
-                foreach(PointF point in boundingPoints)
-                {
-                    testing += string.Format("-{0},{1}\n", point.X, point.Y);
-                }
-
-                int i = 0;
-            }
-        }
-
-        // Rounds up to the nearest X or Y coordinate for the heightmap resolution.
-        private int roundUpToHeightMapRes(double val)
-        {
-            return (int)Math.Ceiling(val / heightmapResolution) * heightmapResolution;
-        }
-
-        // Rounds down to the nearest X or Y coordinate for the heightmap resolution.
-        private int roundDownToHeightMapRes(double val)
-        {
-            return (int)Math.Floor(val / heightmapResolution) * heightmapResolution;
         }
 
         // Handler to output from processes to the Console.
