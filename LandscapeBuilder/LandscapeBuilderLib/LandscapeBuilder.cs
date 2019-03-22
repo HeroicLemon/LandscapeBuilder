@@ -100,7 +100,7 @@ namespace LandscapeBuilderLib
         // atlasDir is the directory of the input tiles.
         // textureDir is the directory of the texture files.
         // singleTile specifies a single tile that can be generated for testing purposes.
-        public void Build(bool genDDS = false, bool genForestFiles = false, bool genThermalFile = false, bool outputToCondor = false, string outputDir = "", string atlasDir = "", string singleTile = "")
+        public void Build(bool genDDS = false, bool genForestFiles = false, bool genThermalFile = false, bool outputToCondor = false, string outputDir = "", string inputDir = "", string singleTile = "")
         {
 
             if(outputToCondor)
@@ -119,15 +119,15 @@ namespace LandscapeBuilderLib
                 }
             }
 
-            if(atlasDir != string.Empty)
+            if(inputDir != string.Empty)
             {
-                if (Directory.Exists(atlasDir))
+                if (Directory.Exists(inputDir))
                 {
-                    SettingsManager.Instance.InputMap = atlasDir;
+                    SettingsManager.Instance.Input = inputDir;
                 }
                 else
                 {
-                    Utilities.WriteLine(string.Format("{0} not found, using default of {1}", atlasDir, SettingsManager.Instance.InputMap), ref _outputText);
+                    Utilities.WriteLine(string.Format("{0} not found, using default of {1}", inputDir, SettingsManager.Instance.Input), ref _outputText);
                 }
             }
 
@@ -178,7 +178,7 @@ namespace LandscapeBuilderLib
         private void getLandscapeWidthAndHeight()
         {
             // Determine the height and width of the map in tiles from the atlas input.
-            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputMap, "*.png", SearchOption.TopDirectoryOnly);
+            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlas, "*.png", SearchOption.TopDirectoryOnly);
             string lastTile = Path.GetFileNameWithoutExtension(mapFiles.Last());
             Point tileCoordinates = Utilities.GetTileCoordinatesFromName(lastTile);
             _landscapeWidth = tileCoordinates.X + 1;
@@ -188,7 +188,7 @@ namespace LandscapeBuilderLib
         // Generates the intermediate tile textures, forest maps, and thermal map.
         private void build()
         {
-            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputMap, "*.png", SearchOption.TopDirectoryOnly);
+            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlas, "*.png", SearchOption.TopDirectoryOnly);
             foreach (string file in mapFiles)
             {
                 if (_singleTile == string.Empty || _singleTile == Path.GetFileNameWithoutExtension(file))

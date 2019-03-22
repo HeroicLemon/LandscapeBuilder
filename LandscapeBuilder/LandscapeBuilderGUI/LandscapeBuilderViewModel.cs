@@ -182,7 +182,7 @@ namespace LandscapeBuilderGUI
             _landscapeBuilder.InitializeTextures();
             _textures = _landscapeBuilder.Textures;
             _outputDirectory = SettingsManager.Instance.Output;
-            _inputDirectory = SettingsManager.Instance.InputMap;
+            _inputDirectory = SettingsManager.Instance.Input;
             _landscapeName = SettingsManager.Instance.LandscapeName;
 
             populateTileNames();
@@ -218,7 +218,7 @@ namespace LandscapeBuilderGUI
             _landscapeBuilder.SaveTextures();
 
             SettingsManager.Instance.Output = OutputDirectory;
-            SettingsManager.Instance.InputMap = InputDirectory;
+            SettingsManager.Instance.Input = InputDirectory;
             _landscapeBuilder.SaveSettings();
         }
 
@@ -248,7 +248,7 @@ namespace LandscapeBuilderGUI
             string singleTile = GenerateSingleTile ? SingleTileName : string.Empty;
             BuilderRunning = true;
             await Task.Run((()
-                => _landscapeBuilder.Build(GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, SettingsManager.Instance.Output, SettingsManager.Instance.InputMap, singleTile)
+                => _landscapeBuilder.Build(GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, SettingsManager.Instance.Output, SettingsManager.Instance.Input, singleTile)
                 ));
             BuilderRunning = false;
         }
@@ -405,9 +405,9 @@ namespace LandscapeBuilderGUI
         {
             TileNames.Clear();
 
-            if (Directory.Exists(InputDirectory))
+            if (Directory.Exists(SettingsManager.Instance.InputAtlas))
             {
-                string[] mapFiles = Directory.GetFiles(InputDirectory, "*.png", SearchOption.TopDirectoryOnly);
+                string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlas, "*.png", SearchOption.TopDirectoryOnly);
                 foreach (string file in mapFiles)
                 {
                     TileNames.Add(Path.GetFileNameWithoutExtension(file));

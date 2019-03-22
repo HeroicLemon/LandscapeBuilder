@@ -28,7 +28,6 @@ namespace LandscapeBuilder
 
                 if (!qgisStringOption.HasValue())
                 {
-                    string landscapeName = landscapeNameOption.HasValue() ? landscapeNameOption.Value() : string.Empty;
                     bool genDDS = genDDSOption.HasValue() || genAllOption.HasValue();
                     bool genForestFiles = genForestOption.HasValue() || genAllOption.HasValue();
                     bool genThermalFile = genThermalOption.HasValue() || genAllOption.HasValue();
@@ -37,7 +36,7 @@ namespace LandscapeBuilder
                     string atlasDir = atlasDirOption.HasValue() ? atlasDirOption.Value() : string.Empty;
                     string singleTile = singleTileOption.HasValue() ? singleTileOption.Value() : string.Empty;
 
-                    builder.Build(landscapeName, genDDS, genForestFiles, genThermalFile, outputToCondor, outputDir, atlasDir, singleTile);
+                    builder.Build(genDDS, genForestFiles, genThermalFile, outputToCondor, outputDir, atlasDir, singleTile);
                 }
                 else
                 {
@@ -48,7 +47,7 @@ namespace LandscapeBuilder
                         int width, height;
                         if(int.TryParse(arg[0], out width) && int.TryParse(arg[1], out height))
                         {
-                            Console.Write(builder.GetAtlasString(width, height));
+                            Console.Write(Utilities.GetAtlasString(width, height));
                         }
                     }
                 }

@@ -12,7 +12,9 @@ namespace LandscapeBuilderLib
         #region Directories
         // The input directory where the reference maps are stored.
         [JsonProperty]
-        public string InputMap { get; set; }
+        public string Input { get; set; }
+        public string InputAtlas { get { return Path.Combine(Input, "Atlas"); } }
+        public string InputAirport { get { return Path.Combine(Input, "AirportData"); } }
 
         // The intermediary outputs.
         [JsonProperty]
@@ -76,7 +78,7 @@ namespace LandscapeBuilderLib
         private void load(SettingsManager other)
         {
             this.Output = other.Output;
-            this.InputMap = other.InputMap;
+            this.Input = other.Input;
         }
 
         private void initializeDefaultDirectories()
@@ -85,7 +87,7 @@ namespace LandscapeBuilderLib
             Executable = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase).Substring(6);
 
             // Inputs can be set from command line argumente.
-            InputMap = Path.Combine(Executable, "Atlas");
+            Input = Path.Combine(Executable, "Atlas");
 
             // This will be customizable.
             Output = Path.Combine(Executable, "BuilderOutput");

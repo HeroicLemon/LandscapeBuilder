@@ -22,6 +22,7 @@ namespace LandscapeBuilderLib
             _elevation = elevation;
             _cornersLandscapeXY = getCornersLandscapeXY(_cornersLatLong);
             _boundingPoints = getBoundingPoints(_cornersLandscapeXY);
+            Point centerPoint = getCenterPoint(_cornersLandscapeXY);
         }
 
         // Outputs the points to flatten in a manner easy to plot on desmos.com.
@@ -247,13 +248,15 @@ namespace LandscapeBuilderLib
             return boundingPoints.ToArray();
         }
 
-
-        // Flattens the area containing the rectangle specified in corners to the given elevation.
-        // Updates the .tr3 heightmap files.
-        private void Flatten(PointF[] cornersLatLong, float elevation)
+        private Point getCenterPoint(Point[] roundedCorners)
         {
+            Point center = new Point
+            {
+                X = (int)Math.Round(roundedCorners.Distinct().Average(p => p.X)),
+                Y = (int)Math.Round(roundedCorners.Distinct().Average(p => p.Y))
+            };
 
-
+            return center;
         }
 
         // Rounds up to the nearest X or Y coordinate for the heightmap resolution.
