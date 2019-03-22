@@ -39,7 +39,13 @@ namespace LandscapeBuilderLib
 
         [JsonProperty]
         public string LandscapeName { get; set; }
-               
+
+        // TODO: Should be able to parse these from the condor files. .trn?
+        public float LatitudeMax { get; set; } = 37.75f;
+        public float LatitudeMin { get; set; } = 36.35f;
+        public float LongitudeMax { get; set; } = -75.6f;
+        public float LongitudeMin { get; set; } = -78.5f;
+
         private static readonly Lazy<SettingsManager> lazy = new Lazy<SettingsManager>(() => new SettingsManager());
         public static SettingsManager Instance {  get { return lazy.Value; } }
 

@@ -83,6 +83,11 @@ namespace LandscapeBuilderLib
             return new Point(tileX, tileY);
         }
 
+        public static float FeetToMeters(float feet)
+        {
+            return feet / 3.2808f;
+        }
+
         public static Color ThermalColorToColor(ThermalColor thermalColor)
         {
             return UintToColor((uint)thermalColor);

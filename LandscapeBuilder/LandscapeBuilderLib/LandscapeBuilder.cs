@@ -527,7 +527,7 @@ namespace LandscapeBuilderLib
             }
             else
             {
-                FAAShapefileRunwayParser parser = new FAAShapefileRunwayParser();
+                FAAShapefileAirportParser parser = new FAAShapefileAirportParser();
                 Airports = parser.Parse();
                 //SaveAirports();
             }

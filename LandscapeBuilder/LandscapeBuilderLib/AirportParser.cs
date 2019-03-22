@@ -10,101 +10,15 @@ using System.Text.RegularExpressions;
 
 namespace LandscapeBuilderLib
 {
-    // TODO: This should be an interface, and it's more of an airport parser.
-    abstract class RunwayParser
+    interface IAirportParser
     {
-        // TODO: Should be able to pull these values from a file somewhere.
-        protected float _top = 37.75f;
-        protected float _left = -78.5f;
-        protected float _bottom = 36.35f;
-        protected float _right = -75.6f;
-
-        public abstract List<Airport> Parse();
-    }
-
-    abstract class FAARunwayParser : RunwayParser
-    {
-        // Determines if the runway is asphalt based on the FAA COMP_CODE
-        protected abstract bool isAsphalt(string comp_code);
-
-        protected float feetToMeters(float feet)
-        {
-            return feet / 3.2808f;
-        }
-    }
-
-    class FAANASRRunwayParser : FAARunwayParser
-    {
-        public override List<Airport> Parse()
-        {
-            List<Airport> airports = new List<Airport>();
-
-            using (SQLiteConnection connection = new SQLiteConnection(@"Data Source=""D:\Users\tgray\Documents\CondorScenery\Land Coverage Sources\NASR\nasr.sqlite"""))
-            {
-                connection.Open();
-                // TODO: This will only work in the north west hemisphere.
-                string selectAirports = string.Format("SELECT * FROM APT_APT WHERE landing_facility_type IN ('AIRPORT', 'GLIDERPORT') AND apt_latitude >= {0} AND apt_latitude <= {1} AND apt_longitude >= {2} AND apt_longitude <= {3}", _bottom, _top, _left, _right);
-                using (SQLiteCommand airportCommand = new SQLiteCommand(selectAirports, connection))
-                {
-                    using (SQLiteDataReader airportReader = airportCommand.ExecuteReader())
-                    {
-                        while(airportReader.Read())
-                        {
-                            string landing_facility_site_number = airportReader["landing_facility_site_number"].ToString();
-                            string selectRunways = string.Format("SELECT * FROM APT_RWY WHERE landing_facility_site_number = '{0}'", landing_facility_site_number);
-                            using (SQLiteCommand runwayCommand = new SQLiteCommand(selectRunways, connection))
-                            {
-                                using (SQLiteDataReader runwayReader = runwayCommand.ExecuteReader())
-                                {
-                                    // Just read the first runway entry for now.
-                                    runwayReader.Read();
-
-                                    string name = airportReader["official_facility_name"].ToString();
-
-                                    string test = runwayReader["base_runway_end_true_alignment"].ToString();
-                                    int direction = int.Parse(runwayReader["base_runway_end_true_alignment"].ToString());
-                                    int length = (int)feetToMeters(float.Parse(runwayReader["runway_physical_runway_length_nearest_foot"].ToString()));
-                                    int width = (int)feetToMeters(float.Parse(runwayReader["runway_physical_runway_width_nearest_foot"].ToString()));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return airports;
-        }
-
-        // TODO: This needs to be updated if above implementation is continued.
-        protected override bool isAsphalt(string comp_code)
-        {
-            bool isAsphalt = false;
-
-            switch (comp_code)
-            {
-                case "ASP+DIRT":
-                case "ASP+GRASS":
-                case "ASP+TRTD":
-                case "ASPH":
-                case "CONC":
-                case "CONC+ASPH":
-                case "CONC+GVL":
-                case "CONC+TRTD":
-                case "PSP":
-                    {
-                        isAsphalt = true;
-                    }
-                    break;
-            }
-
-            return isAsphalt;
-        }
+        List<Airport> Parse();
     }
 
     // Parses runway data primarily from FAA shapefiles for runways and airports. Accesses NASR database for direction.
-    class FAAShapefileRunwayParser : FAARunwayParser
+    class FAAShapefileAirportParser : IAirportParser
     {
-        public override List<Airport> Parse()
+        public List<Airport> Parse()
         {
             List<Airport> airports = new List<Airport>();
 
@@ -150,11 +64,11 @@ namespace LandscapeBuilderLib
 
                     float latitude = (float)runwayCoordinate.Y;
                     float longitude = (float)runwayCoordinate.X;
-                    float altitude = feetToMeters(float.Parse(airportFeature.DataRow["ELEVATION"].ToString()));
+                    float altitude = Utilities.FeetToMeters(float.Parse(airportFeature.DataRow["ELEVATION"].ToString()));
                     int direction = getDirection(runwayFeature, airportFeature.DataRow["IDENT"].ToString());
 
-                    int length = (int)Math.Round(feetToMeters(float.Parse(runwayFeature.DataRow["LENGTH"].ToString())));
-                    int width = (int)Math.Round(feetToMeters(float.Parse(runwayFeature.DataRow["WIDTH"].ToString())));
+                    int length = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["LENGTH"].ToString())));
+                    int width = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["WIDTH"].ToString())));
 
                     bool asphalt = isAsphalt((string)runwayFeature.DataRow["COMP_CODE"]);
 
@@ -177,10 +91,11 @@ namespace LandscapeBuilderLib
 
         private bool coordinateWithinExtent(Coordinate coordinate)
         {
-            return coordinate.Y < _top && coordinate.Y > _bottom && coordinate.X < _right && coordinate.X > _left;
+            return coordinate.Y < SettingsManager.Instance.LatitudeMax && coordinate.Y > SettingsManager.Instance.LatitudeMin 
+                && coordinate.X < SettingsManager.Instance.LongitudeMax && coordinate.X > SettingsManager.Instance.LongitudeMin;
         }
 
-        protected override bool isAsphalt(string comp_code)
+        protected bool isAsphalt(string comp_code)
         {
             bool isAsphalt = false;
 
