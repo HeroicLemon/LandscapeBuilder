@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Linq;
 
 namespace LandscapeBuilderLib
@@ -14,54 +15,24 @@ namespace LandscapeBuilderLib
         private PointF[] _cornersLandscapeXYUnrounded;
         private float _elevation;
 
-        private PointF[] _boundingPoints;
+        private Point[] _bounds;
+        private Point[] _innerPoints;
 
         public TerrainFlattener(PointF[] cornersLatLong, float elevation)
         {
             _cornersLatLong = cornersLatLong;
             _elevation = elevation;
             _cornersLandscapeXY = getCornersLandscapeXY(_cornersLatLong);
-            _boundingPoints = getBoundingPoints(_cornersLandscapeXY);
-            Point centerPoint = getCenterPoint(_cornersLandscapeXY);
+            _bounds = getBounds(_cornersLandscapeXY);
+
+            _innerPoints = getInnerPoints(_bounds);
+            //Point centerPoint = getCenterPoint(_cornersLandscapeXY);
         }
 
         // Outputs the points to flatten in a manner easy to plot on desmos.com.
         public List<string> ToStringList()
         {
             List<string> strings = new List<string>();
-
-            //// Left line
-            //strings.Add(@"y-y_1=m\left(x-x_1\right)");
-            //// Left slope
-            //strings.Add(@"m=\frac{y_2-y_1}{x_2-x_1}");
-            //// Top left point
-            //strings.Add(@"\left(x_1,y_1\right)");
-            //// Bottom left point
-            //strings.Add(@"\left(x_2,y_2\right)");
-            //// Right line
-            //strings.Add(@"y-y_3=m_2\left(x-x_3\right)");
-            //// Right slope
-            //strings.Add(@"m_2=\frac{y_4-y_3}{x_4-x_3}");
-            //// Top right point
-            //strings.Add(@"\left(x_3,y_3\right)");
-            //// Bottom right point
-            //strings.Add(@"\left(x_4,y_4\right)");
-            //// Top left X
-            //strings.Add(string.Format(@"x_1=-{0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.TopLeft].X));
-            //// Top left Y
-            //strings.Add(string.Format(@"y_1={0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.TopLeft].Y));
-            //// Bottom left X
-            //strings.Add(string.Format(@"x_2=-{0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.BottomLeft].X));
-            //// Bottom left Y
-            //strings.Add(string.Format(@"y_2={0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.BottomLeft].Y));
-            //// Top right X
-            //strings.Add(string.Format(@"x_3=-{0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.TopRight].X));
-            //// Top right Y
-            //strings.Add(string.Format(@"y_3={0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.TopRight].Y));
-            //// Bottom right X
-            //strings.Add(string.Format(@"x_4=-{0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.BottomRight].X));
-            //// Bottom right Y
-            //strings.Add(string.Format(@"y_4={0}", _cornersLandscapeXYUnrounded[(int)RunwayCorner.BottomRight].Y));
 
             string unroundedCorners = string.Empty;
             foreach(PointF point in _cornersLandscapeXYUnrounded)
@@ -89,17 +60,23 @@ namespace LandscapeBuilderLib
             strings.Add(roundedCorners);
 
             string bounds = string.Empty;
-            foreach(PointF point in _boundingPoints)
+            foreach(Point point in _bounds)
             {
                 bounds += string.Format("-{0},{1}\n", point.X, point.Y);
 
-                if (point == _boundingPoints.Last())
+                if (point == _bounds.Last())
                 {
-                    bounds += string.Format("-{0},{1}\n", _boundingPoints.First().X, _boundingPoints.First().Y);
+                    bounds += string.Format("-{0},{1}\n", _bounds.First().X, _bounds.First().Y);
                 }
             }
             strings.Add(bounds);
 
+            string inner = string.Empty;
+            foreach(Point point in _innerPoints)
+            {
+                inner += string.Format("-{0},{1}\n", point.X, point.Y);
+            }
+            strings.Add(inner);
 
             return strings;
         }
@@ -179,10 +156,10 @@ namespace LandscapeBuilderLib
             return cornersLandscapeXY;
         }
 
-        private PointF[] getBoundingPoints(Point[] cornersLandscapeXY)
+        private Point[] getBounds(Point[] cornersLandscapeXY)
         {
             // This is the list of point that make up the outline of the region that needs to be flattened.
-            List<PointF> boundingPoints = new List<PointF>();
+            List<Point> boundingPoints = new List<Point>();
 
             Point topLeft = cornersLandscapeXY[(int)RunwayCorner.TopLeft];
             Point bottomLeft = cornersLandscapeXY[(int)RunwayCorner.BottomLeft];
@@ -206,7 +183,7 @@ namespace LandscapeBuilderLib
                 // Go to the next Y intercept and figure out the X coordinate
                 y2 -= heightmapResolution;
                 x2 = roundUpToHeightMapRes(((y2 - topLeft.Y) / leftSlope) + topLeft.X);
-                boundingPoints.Add(new PointF(x2, y2));
+                boundingPoints.Add(new Point(x2, y2));
             }
 
             // Then add the bottom left point.
@@ -218,7 +195,7 @@ namespace LandscapeBuilderLib
             {
                 x2 -= heightmapResolution;
                 y2 = roundDownToHeightMapRes((x2 - bottomLeft.X) * bottomSlope + bottomLeft.Y);
-                boundingPoints.Add(new PointF(x2, y2));
+                boundingPoints.Add(new Point(x2, y2));
             }
 
             // Then add the bottom right point.
@@ -230,7 +207,7 @@ namespace LandscapeBuilderLib
             {
                 y2 += heightmapResolution;
                 x2 = roundDownToHeightMapRes(((y2 - bottomRight.Y) / rightSlope) + bottomRight.X);
-                boundingPoints.Add(new PointF(x2, y2));
+                boundingPoints.Add(new Point(x2, y2));
             }
 
             // Then add the top right point
@@ -242,21 +219,64 @@ namespace LandscapeBuilderLib
             {
                 x2 += heightmapResolution;
                 y2 = roundUpToHeightMapRes((x2 - topRight.X) * topSlope + topRight.Y);
-                boundingPoints.Add(new PointF(x2, y2));
+                boundingPoints.Add(new Point(x2, y2));
             }
 
             return boundingPoints.ToArray();
         }
 
-        private Point getCenterPoint(Point[] roundedCorners)
-        {
-            Point center = new Point
-            {
-                X = (int)Math.Round(roundedCorners.Distinct().Average(p => p.X)),
-                Y = (int)Math.Round(roundedCorners.Distinct().Average(p => p.Y))
-            };
+       
+        private Point[] getInnerPoints(Point[] bounds)
+        {      
+            List<Point> innerPoints = new List<Point>();
 
-            return center;
+            // Get min and max values from graphics path.
+            int xMin = int.MaxValue;
+            int yMin = int.MaxValue;
+            int xMax = int.MinValue;
+            int yMax = int.MinValue;
+            foreach(Point point in bounds)
+            {
+                if(point.X < xMin)
+                {
+                    xMin = point.X;
+                }
+
+                if(point.Y < yMin)
+                {
+                    yMin = point.Y;
+                }
+
+                if(point.X > xMax)
+                {
+                    xMax = point.X;
+                }
+
+                if(point.Y > yMax)
+                {
+                    yMax = point.Y;
+                }
+            }
+
+            GraphicsPath graphicsPath = new GraphicsPath();
+            graphicsPath.AddPolygon(bounds);
+
+            // Brute force it, and go through all of the possible values from the min and max and check to see if they are inside the region.
+            for(int i = xMax; i > xMin; i -= heightmapResolution)
+            {
+                for(int j = yMax; j > yMin; j -= heightmapResolution)
+                {
+                    Point point = new Point(i, j);
+                    // For some reason this is considering points along one of the sides of the bounds to be within the path.
+                    // We'll be combining the inner points with the outer at the end though, so I guess it doesn't really matter.
+                    if(graphicsPath.IsVisible(point))
+                    {
+                        innerPoints.Add(point);
+                    }
+                }
+            }
+
+            return innerPoints.ToArray();
         }
 
         // Rounds up to the nearest X or Y coordinate for the heightmap resolution.

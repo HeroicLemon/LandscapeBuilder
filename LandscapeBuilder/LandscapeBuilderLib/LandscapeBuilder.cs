@@ -512,7 +512,7 @@ namespace LandscapeBuilderLib
         // Handler to output from processes to the Console.
         private static void processOutput(object sendingProces, DataReceivedEventArgs outline)
         {
-            if(!String.IsNullOrEmpty(outline.Data))
+            if(!string.IsNullOrEmpty(outline.Data))
             {
                 Console.WriteLine(outline.Data);
             }
