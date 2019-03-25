@@ -23,8 +23,8 @@ namespace LandscapeBuilderLib
         {
             List<Airport> airports = new List<Airport>();
 
-            string runwayShapeFilePath = Path.Combine(SettingsManager.Instance.InputAirport, "Runways.shp");
-            string airportShapeFilePath = Path.Combine(SettingsManager.Instance.InputAirport, "Airports.shp");
+            string runwayShapeFilePath = Path.Combine(SettingsManager.Instance.InputAirportDir, "Runways.shp");
+            string airportShapeFilePath = Path.Combine(SettingsManager.Instance.InputAirportDir, "Airports.shp");
 
             PolygonShapefile runwayShapefile = new PolygonShapefile(runwayShapeFilePath);
             PointShapefile airportShapefile = new PointShapefile(airportShapeFilePath);
@@ -126,7 +126,7 @@ namespace LandscapeBuilderLib
             string designator = runwayFeature.DataRow["DESIGNATOR"].ToString();
 
             // There is a lot of bad runway data in the shapefile, so first we'll try to get the direction from the NASR database.
-            using (SQLiteConnection connection = new SQLiteConnection(string.Format(@"Data Source=""{0}""", Path.Combine(SettingsManager.Instance.InputAirport, "nasr.sqlite"))))
+            using (SQLiteConnection connection = new SQLiteConnection(string.Format(@"Data Source=""{0}""", Path.Combine(SettingsManager.Instance.InputAirportDir, "nasr.sqlite"))))
             {
                 connection.Open();
                 string selectAirports = string.Format("SELECT * FROM APT_APT WHERE location_identifier = '{0}'", airportId);

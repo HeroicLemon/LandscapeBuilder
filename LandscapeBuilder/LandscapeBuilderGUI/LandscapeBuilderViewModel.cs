@@ -181,8 +181,8 @@ namespace LandscapeBuilderGUI
 
             _landscapeBuilder.InitializeTextures();
             _textures = _landscapeBuilder.Textures;
-            _outputDirectory = SettingsManager.Instance.Output;
-            _inputDirectory = SettingsManager.Instance.Input;
+            _outputDirectory = SettingsManager.Instance.OutputDir;
+            _inputDirectory = SettingsManager.Instance.InputDir;
             _landscapeName = SettingsManager.Instance.LandscapeName;
 
             populateTileNames();
@@ -217,8 +217,8 @@ namespace LandscapeBuilderGUI
             _landscapeBuilder.Textures = Textures;
             _landscapeBuilder.SaveTextures();
 
-            SettingsManager.Instance.Output = OutputDirectory;
-            SettingsManager.Instance.Input = InputDirectory;
+            SettingsManager.Instance.OutputDir = OutputDirectory;
+            SettingsManager.Instance.InputDir = InputDirectory;
             _landscapeBuilder.SaveSettings();
         }
 
@@ -248,7 +248,7 @@ namespace LandscapeBuilderGUI
             string singleTile = GenerateSingleTile ? SingleTileName : string.Empty;
             BuilderRunning = true;
             await Task.Run((()
-                => _landscapeBuilder.Build(GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, SettingsManager.Instance.Output, SettingsManager.Instance.Input, singleTile)
+                => _landscapeBuilder.Build(GenDDS, GenForestFiles, GenThermalFile, OutputToCondor, SettingsManager.Instance.OutputDir, SettingsManager.Instance.InputDir, singleTile)
                 ));
             BuilderRunning = false;
         }
@@ -391,12 +391,12 @@ namespace LandscapeBuilderGUI
         {
             LandscapeNames.Clear();
 
-            if (SettingsManager.Instance.CondorLandscape != null)
+            if (SettingsManager.Instance.CondorLandscapesDir != null)
             {
-                string[] landscapes = Directory.GetDirectories(SettingsManager.Instance.CondorLandscape);
+                string[] landscapes = Directory.GetDirectories(SettingsManager.Instance.CondorLandscapesDir);
                 foreach (string landscape in landscapes)
                 {
-                    LandscapeNames.Add(landscape.Substring(SettingsManager.Instance.CondorLandscape.Length + 1));
+                    LandscapeNames.Add(landscape.Substring(SettingsManager.Instance.CondorLandscapesDir.Length + 1));
                 }
             }
         }
@@ -405,9 +405,9 @@ namespace LandscapeBuilderGUI
         {
             TileNames.Clear();
 
-            if (Directory.Exists(SettingsManager.Instance.InputAtlas))
+            if (Directory.Exists(SettingsManager.Instance.InputAtlasDir))
             {
-                string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlas, "*.png", SearchOption.TopDirectoryOnly);
+                string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlasDir, "*.png", SearchOption.TopDirectoryOnly);
                 foreach (string file in mapFiles)
                 {
                     TileNames.Add(Path.GetFileNameWithoutExtension(file));

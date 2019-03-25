@@ -26,6 +26,7 @@ namespace LandscapeBuilderLib
             _innerPoints = getInnerPoints(_borderPoints);
         }
 
+        // Modifies the .tr3 files associated with this area.
         public void Flatten(bool outputToCondor = false)
         {
             Dictionary<string, byte[]> heightmapFiles = new Dictionary<string, byte[]>();
@@ -41,7 +42,7 @@ namespace LandscapeBuilderLib
                 // If this height map file has not already been loaded, then load it from the landscape.
                 if (!heightmapFiles.ContainsKey(patchName))
                 { 
-                    string patchPath = Path.Combine(SettingsManager.Instance.CondorLandscape, string.Format(@"{0}\Heightmaps\h{1}.tr3", SettingsManager.Instance.LandscapeName, patchName));
+                    string patchPath = Path.Combine(SettingsManager.Instance.CurrentLandscapeDir, string.Format(@"Heightmaps\h{0}.tr3", patchName));
                     heightmapFiles.Add(patchName, File.ReadAllBytes(patchPath));
                 }
 
@@ -54,7 +55,7 @@ namespace LandscapeBuilderLib
             foreach(var heightmap in heightmapFiles)
             {
                 string patchFile = string.Format("h{0}.tr3", heightmap.Key);
-                File.WriteAllBytes(Path.Combine(SettingsManager.Instance.OutputHeightMap, patchFile), heightmap.Value);
+                File.WriteAllBytes(Path.Combine(SettingsManager.Instance.OutputHeightMapDir, patchFile), heightmap.Value);
             }
         }
 

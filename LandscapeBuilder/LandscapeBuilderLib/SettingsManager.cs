@@ -12,36 +12,37 @@ namespace LandscapeBuilderLib
         #region Directories
         // The input directory where the reference maps are stored.
         [JsonProperty]
-        public string Input { get; set; }
-        public string InputAtlas { get { return Path.Combine(Input, "Atlas"); } }
-        public string InputAirport { get { return Path.Combine(Input, "AirportData"); } }
+        public string InputDir { get; set; }
+        public string InputAtlasDir { get { return Path.Combine(InputDir, "Atlas"); } }
+        public string InputAirportDir { get { return Path.Combine(InputDir, "AirportData"); } }
 
         // The intermediary outputs.
         [JsonProperty]
-        public string Output { get; set; }
-        public string OutputTexture { get { return Path.Combine(Output, "Textures"); } }
-        public string OutputTexturePatch { get { return Path.Combine(OutputTexture, "Patches"); } }
-        public string OutputThermalMap { get { return Path.Combine(Output, "ThermalMaps"); } }
-        public string OutputThermalMapTiles {  get { return Path.Combine(OutputThermalMap, "Tiles"); } }
-        public string OutputForestMapTiles { get { return Path.Combine(Output, "ForestMaps"); } }
+        public string OutputDir { get; set; }
+        public string OutputTextureDir { get { return Path.Combine(OutputDir, "Textures"); } }
+        public string OutputTexturePatchDir { get { return Path.Combine(OutputTextureDir, "Patches"); } }
+        public string OutputThermalMapDir { get { return Path.Combine(OutputDir, "ThermalMaps"); } }
+        public string OutputThermalMapTilesDir {  get { return Path.Combine(OutputThermalMapDir, "Tiles"); } }
+        public string OutputForestMapTilesDir { get { return Path.Combine(OutputDir, "ForestMaps"); } }
 
         // The final outputs to be used in Condor.
-        public string OutputFinal { get; set; }
-        public string OutputDDS { get { return Path.Combine(OutputFinal, "Textures"); } }
-        public string OutputForestMap { get { return Path.Combine(OutputFinal, "ForestMaps"); } }
-        public string OutputHeightMap { get { return Path.Combine(OutputFinal, "HeightMaps"); } }
+        public string OutputFinalDir { get; set; }
+        public string OutputDDSDir { get { return Path.Combine(OutputFinalDir, "Textures"); } }
+        public string OutputForestMapDir { get { return Path.Combine(OutputFinalDir, "ForestMaps"); } }
+        public string OutputHeightMapDir { get { return Path.Combine(OutputFinalDir, "HeightMaps"); } }
 
         // Local app data for storing settings.
-        public string AppData { get; private set; }
+        public string AppDataDir { get; private set; }
 
-        // Directory that Condor is installed to
-        public string CondorLandscape { get; private set; }
+        // Landscape directory of Condor 2
+        public string CondorLandscapesDir { get; private set; }
+        public string CurrentLandscapeDir { get { return Path.Combine(CondorLandscapesDir, LandscapeName); } }
 
-        public string Executable { get; private set; }
+        public string ExecutableDir { get; private set; }
         #endregion
 
         [JsonProperty]
-        public string LandscapeName { get; set; }
+        public string LandscapeName { get; set; } // TODO: When landscape name changes, will need to update some data.
 
         // TODO: Should be able to parse these from the condor files. .trn?
         public float LatitudeMax { get; set; } = 37.75f;
@@ -60,9 +61,9 @@ namespace LandscapeBuilderLib
             // Save the default directories.
             initializeDefaultDirectories();
             findCondor();
-            if (File.Exists(Path.Combine(AppData, "settings.conf")))
+            if (File.Exists(Path.Combine(AppDataDir, "settings.conf")))
             {
-                string json = File.ReadAllText(Path.Combine(AppData, "settings.conf"));
+                string json = File.ReadAllText(Path.Combine(AppDataDir, "settings.conf"));
                 load(JsonConvert.DeserializeObject<SettingsManager>(json));
             }
             else
@@ -76,49 +77,50 @@ namespace LandscapeBuilderLib
         // TODO: Find a more maintainable way of doing this.
         private void load(SettingsManager other)
         {
-            this.Output = other.Output;
-            this.Input = other.Input;
+            this.OutputDir = other.OutputDir;
+            this.InputDir = other.InputDir;
+            this.LandscapeName = other.LandscapeName;
         }
 
         private void initializeDefaultDirectories()
         {
 
-            Executable = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase).Substring(6);
+            ExecutableDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetName().CodeBase).Substring(6);
 
             // Inputs can be set from command line argumente.
-            Input = Path.Combine(Executable, "Atlas");
+            InputDir = Path.Combine(ExecutableDir, "Atlas");
 
             // This will be customizable.
-            Output = Path.Combine(Executable, "BuilderOutput");
+            OutputDir = Path.Combine(ExecutableDir, "BuilderOutput");
 
             // Will either be this 'Final' subdirectory or the landscape directory.
-            OutputFinal = Path.Combine(Output, "Final");
+            OutputFinalDir = Path.Combine(OutputDir, "Final");
 
-            AppData = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LandscapeBuilder");
+            AppDataDir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "LandscapeBuilder");
         }
 
         public void SaveSettings()
         {
             string json = JsonConvert.SerializeObject(this, Formatting.Indented);
-            File.WriteAllText(Path.Combine(AppData, "settings.conf"), json);
+            File.WriteAllText(Path.Combine(AppDataDir, "settings.conf"), json);
         }
 
         public void CreateDirectories()
         {
             // Create all the output directories if they don't already exist.
-            Directory.CreateDirectory(Output);
-            Directory.CreateDirectory(OutputTexture);
-            Directory.CreateDirectory(OutputTexturePatch);
-            Directory.CreateDirectory(OutputForestMapTiles);
-            Directory.CreateDirectory(OutputThermalMap);
-            Directory.CreateDirectory(OutputThermalMapTiles);
+            Directory.CreateDirectory(OutputDir);
+            Directory.CreateDirectory(OutputTextureDir);
+            Directory.CreateDirectory(OutputTexturePatchDir);
+            Directory.CreateDirectory(OutputForestMapTilesDir);
+            Directory.CreateDirectory(OutputThermalMapDir);
+            Directory.CreateDirectory(OutputThermalMapTilesDir);
 
-            Directory.CreateDirectory(OutputFinal);
-            Directory.CreateDirectory(OutputDDS);
-            Directory.CreateDirectory(OutputForestMap);
-            Directory.CreateDirectory(OutputHeightMap);
+            Directory.CreateDirectory(OutputFinalDir);
+            Directory.CreateDirectory(OutputDDSDir);
+            Directory.CreateDirectory(OutputForestMapDir);
+            Directory.CreateDirectory(OutputHeightMapDir);
 
-            Directory.CreateDirectory(AppData);
+            Directory.CreateDirectory(AppDataDir);
         }
 
         private void findCondor()
@@ -135,11 +137,11 @@ namespace LandscapeBuilderLib
 
                     if (displayName.Equals("Condor 2"))
                     {
-                        CondorLandscape = Path.Combine(key.GetValue("InstallLocation").ToString(), "Landscapes");
+                        CondorLandscapesDir = Path.Combine(key.GetValue("InstallLocation").ToString(), "Landscapes");
                         // If the landscape name hasn't been set yet, pick one as the default.
                         if (LandscapeName == null)
                         {
-                            string landscapePath = Directory.GetDirectories(CondorLandscape).FirstOrDefault();
+                            string landscapePath = Directory.GetDirectories(CondorLandscapesDir).FirstOrDefault();
                             LandscapeName = new DirectoryInfo(landscapePath).Name;
                         }
                         break;

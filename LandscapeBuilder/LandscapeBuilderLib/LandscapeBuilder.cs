@@ -105,17 +105,17 @@ namespace LandscapeBuilderLib
 
             if(outputToCondor)
             {
-                SettingsManager.Instance.OutputFinal = Path.Combine(SettingsManager.Instance.CondorLandscape, SettingsManager.Instance.LandscapeName);
+                SettingsManager.Instance.OutputFinalDir = Path.Combine(SettingsManager.Instance.CondorLandscapesDir, SettingsManager.Instance.LandscapeName);
             }
 
             if(outputDir != string.Empty)
             {
-                SettingsManager.Instance.Output = outputDir;
-                Directory.CreateDirectory(SettingsManager.Instance.Output);
+                SettingsManager.Instance.OutputDir = outputDir;
+                Directory.CreateDirectory(SettingsManager.Instance.OutputDir);
 
                 if(!outputToCondor)
                 {
-                    SettingsManager.Instance.OutputFinal = Path.Combine(SettingsManager.Instance.Output, "Final");
+                    SettingsManager.Instance.OutputFinalDir = Path.Combine(SettingsManager.Instance.OutputDir, "Final");
                 }
             }
 
@@ -123,11 +123,11 @@ namespace LandscapeBuilderLib
             {
                 if (Directory.Exists(inputDir))
                 {
-                    SettingsManager.Instance.Input = inputDir;
+                    SettingsManager.Instance.InputDir = inputDir;
                 }
                 else
                 {
-                    Utilities.WriteLine(string.Format("{0} not found, using default of {1}", inputDir, SettingsManager.Instance.Input), ref _outputText);
+                    Utilities.WriteLine(string.Format("{0} not found, using default of {1}", inputDir, SettingsManager.Instance.InputDir), ref _outputText);
                 }
             }
 
@@ -178,7 +178,7 @@ namespace LandscapeBuilderLib
         private void getLandscapeWidthAndHeight()
         {
             // Determine the height and width of the map in tiles from the atlas input.
-            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlas, "*.png", SearchOption.TopDirectoryOnly);
+            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlasDir, "*.png", SearchOption.TopDirectoryOnly);
             string lastTile = Path.GetFileNameWithoutExtension(mapFiles.Last());
             Point tileCoordinates = Utilities.GetTileCoordinatesFromName(lastTile);
             _landscapeWidth = tileCoordinates.X + 1;
@@ -188,7 +188,7 @@ namespace LandscapeBuilderLib
         // Generates the intermediate tile textures, forest maps, and thermal map.
         private void build()
         {
-            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlas, "*.png", SearchOption.TopDirectoryOnly);
+            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlasDir, "*.png", SearchOption.TopDirectoryOnly);
             foreach (string file in mapFiles)
             {
                 if (_singleTile == string.Empty || _singleTile == Path.GetFileNameWithoutExtension(file))
@@ -243,12 +243,12 @@ namespace LandscapeBuilderLib
             }
 
             // Save the bitmaps
-            textureOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputTexture, @"{0}.bmp"), tileName));
+            textureOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputTextureDir, @"{0}.bmp"), tileName));
             saveTexturePatches(textureOutput.Bitmap, tileName);
             
-            deciduousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTiles, @"b{0}.bmp"), tileName), 2048);
-            coniferousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTiles, @"s{0}.bmp"), tileName), 2048);
-            thermalOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputThermalMapTiles, @"{0}.bmp"), tileName), 256);
+            deciduousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTilesDir, @"b{0}.bmp"), tileName), 2048);
+            coniferousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTilesDir, @"s{0}.bmp"), tileName), 2048);
+            thermalOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputThermalMapTilesDir, @"{0}.bmp"), tileName), 256);
 
             textureOutput.Dispose();
             deciduousOutput.Dispose();
@@ -294,7 +294,7 @@ namespace LandscapeBuilderLib
             foreach(var patch in patches)
             {
                 string patchName = string.Format("t{0}.bmp", patch.Key);
-                patch.Value.Save(Path.Combine(SettingsManager.Instance.OutputTexturePatch, patchName), ImageFormat.Bmp);
+                patch.Value.Save(Path.Combine(SettingsManager.Instance.OutputTexturePatchDir, patchName), ImageFormat.Bmp);
             }
         }
 
@@ -302,7 +302,7 @@ namespace LandscapeBuilderLib
         // Technically, it would be faster to skip writing out the forest map bitmaps and generate these directly instead, but it only adds a few minutes to the total processing time.
         private void generateForestFiles()
         {
-            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.OutputForestMapTiles, "b*.bmp", SearchOption.TopDirectoryOnly);
+            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.OutputForestMapTilesDir, "b*.bmp", SearchOption.TopDirectoryOnly);
             foreach(string file in mapFiles)
             {
                 string tileName = Path.GetFileNameWithoutExtension(file).Substring(1);
@@ -353,7 +353,7 @@ namespace LandscapeBuilderLib
                         }
                     }
 
-                    string path = string.Format(Path.Combine(SettingsManager.Instance.OutputForestMap, "{0}.for"), deciduousPatches.Keys.ElementAt(k));
+                    string path = string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapDir, "{0}.for"), deciduousPatches.Keys.ElementAt(k));
                     File.WriteAllBytes(path, forestData);
                 }
                 elapsed.Stop();
@@ -386,7 +386,7 @@ namespace LandscapeBuilderLib
             }
             catch (System.ComponentModel.Win32Exception)
             {
-                Utilities.WriteLine(string.Format("Failed to generate hashes. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable), ref _outputText);
+                Utilities.WriteLine(string.Format("Failed to generate hashes. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.ExecutableDir), ref _outputText);
             }
         }
 
@@ -398,7 +398,7 @@ namespace LandscapeBuilderLib
 
             Process process = new Process();
             process.StartInfo.FileName = "nvdxt.exe";
-            process.StartInfo.Arguments = string.Format("-quality_highest -nmips 12 -dxt3 -Triangle -file \"{0}\" -outdir \"{1}\"", Path.Combine(SettingsManager.Instance.OutputTexturePatch, "t*.bmp"), SettingsManager.Instance.OutputDDS);
+            process.StartInfo.Arguments = string.Format("-quality_highest -nmips 12 -dxt3 -Triangle -file \"{0}\" -outdir \"{1}\"", Path.Combine(SettingsManager.Instance.OutputTexturePatchDir, "t*.bmp"), SettingsManager.Instance.OutputDDSDir);
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = _outputText == null;
             process.OutputDataReceived += new DataReceivedEventHandler(processOutput);
@@ -418,7 +418,7 @@ namespace LandscapeBuilderLib
             catch (System.ComponentModel.Win32Exception)
             {
                 elapsed.Stop();
-                Utilities.WriteLine(string.Format("Failed to generate DDS. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable), ref _outputText);
+                Utilities.WriteLine(string.Format("Failed to generate DDS. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.ExecutableDir), ref _outputText);
             }
         }
 
@@ -429,7 +429,7 @@ namespace LandscapeBuilderLib
             Utilities.Write("Building thermal map...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
-            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.OutputThermalMapTiles, "*.bmp", SearchOption.TopDirectoryOnly);
+            string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.OutputThermalMapTilesDir, "*.bmp", SearchOption.TopDirectoryOnly);
             BitmapWrapper thermalMap = new BitmapWrapper(_landscapeWidth * 256, _landscapeHeight * 256, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
             foreach (string file in mapFiles)
             {
@@ -440,7 +440,7 @@ namespace LandscapeBuilderLib
             }
 
             // Go ahead and save this in case manual import of thermal map is desired later.
-            thermalMap.Save(Path.Combine(SettingsManager.Instance.OutputThermalMap, "ThermalMap.bmp"));
+            thermalMap.Save(Path.Combine(SettingsManager.Instance.OutputThermalMapDir, "ThermalMap.bmp"));
 
             elapsed.Stop();
             Utilities.WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
@@ -452,7 +452,7 @@ namespace LandscapeBuilderLib
             Utilities.Write("Generating thermal file...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
-            BitmapWrapper thermalMap = new BitmapWrapper(Path.Combine(SettingsManager.Instance.OutputThermalMap, "ThermalMap.bmp"));
+            BitmapWrapper thermalMap = new BitmapWrapper(Path.Combine(SettingsManager.Instance.OutputThermalMapDir, "ThermalMap.bmp"));
 
             // The TDM file starts at the bottom right and goes all the way across the width of the map (no tiles).
             // Each pixel in ThermalMap.bmp is represented by a single byte of one of the channels of the color.
@@ -473,7 +473,7 @@ namespace LandscapeBuilderLib
                 }
             }
 
-            string path = string.Format(Path.Combine(SettingsManager.Instance.OutputFinal, "{0}.tdm"), SettingsManager.Instance.LandscapeName);
+            string path = string.Format(Path.Combine(SettingsManager.Instance.OutputFinalDir, "{0}.tdm"), SettingsManager.Instance.LandscapeName);
             File.WriteAllBytes(path, tdmData);
 
             elapsed.Stop();
@@ -521,9 +521,9 @@ namespace LandscapeBuilderLib
 
         public void InitializeAirports()
         {
-            if (File.Exists(Path.Combine(SettingsManager.Instance.AppData, "airports.conf")))
+            if (File.Exists(Path.Combine(SettingsManager.Instance.AppDataDir, "airports.conf")))
             {
-                string json = File.ReadAllText(Path.Combine(SettingsManager.Instance.AppData, "airports.conf"));
+                string json = File.ReadAllText(Path.Combine(SettingsManager.Instance.AppDataDir, "airports.conf"));
                 Airports = JsonConvert.DeserializeObject<List<Airport>>(json);
             }
             else
@@ -537,9 +537,9 @@ namespace LandscapeBuilderLib
         // Loads the textures defined in textures.conf or initializes the defaults if textures.conf does not exist.
         public void InitializeTextures()
         {
-            if (File.Exists(Path.Combine(SettingsManager.Instance.AppData, "textures.conf")))
+            if (File.Exists(Path.Combine(SettingsManager.Instance.AppDataDir, "textures.conf")))
             {
-                string json = File.ReadAllText(Path.Combine(SettingsManager.Instance.AppData, "textures.conf"));
+                string json = File.ReadAllText(Path.Combine(SettingsManager.Instance.AppDataDir, "textures.conf"));
                 Textures = JsonConvert.DeserializeObject<Dictionary<Color, LandData>>(json, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
             }
             else
@@ -589,7 +589,7 @@ namespace LandscapeBuilderLib
         public void SaveTextures()
         {
             string json = JsonConvert.SerializeObject(Textures, Formatting.Indented, new JsonSerializerSettings { TypeNameHandling = TypeNameHandling.Auto });
-            File.WriteAllText(Path.Combine(SettingsManager.Instance.AppData, "textures.conf"), json);
+            File.WriteAllText(Path.Combine(SettingsManager.Instance.AppDataDir, "textures.conf"), json);
         }
 
         public void SaveSettings()
@@ -600,7 +600,7 @@ namespace LandscapeBuilderLib
         public void SaveAirports()
         {
             string json = JsonConvert.SerializeObject(Airports, Formatting.Indented);
-            File.WriteAllText(Path.Combine(SettingsManager.Instance.AppData, "airports.conf"), json);
+            File.WriteAllText(Path.Combine(SettingsManager.Instance.AppDataDir, "airports.conf"), json);
         }
 
 

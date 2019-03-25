@@ -21,14 +21,13 @@ namespace LandscapeBuilderLib
 
             Process process = new Process();
             process.StartInfo.FileName = "CoCoCo.exe";
-            // Need to round here because of "conversion failed" issues.
-            process.StartInfo.Arguments = string.Format("{0} {1} {2}", SettingsManager.Instance.LandscapeName, Math.Round(latLong.Y, 4), Math.Round(latLong.X, 4));
+            process.StartInfo.Arguments = string.Format("{0} {1} {2}", SettingsManager.Instance.LandscapeName, latLong.Y, latLong.X);
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.CreateNoWindow = true;
 
             // Make sure working directory is set up properly so that CoTaCo.ini can be parsed.
-            if (!File.Exists(Path.Combine(SettingsManager.Instance.Executable, process.StartInfo.FileName)))
+            if (!File.Exists(Path.Combine(SettingsManager.Instance.ExecutableDir, process.StartInfo.FileName)))
             {
                 foreach (string path in Environment.GetEnvironmentVariable("PATH").Split(';'))
                 {
