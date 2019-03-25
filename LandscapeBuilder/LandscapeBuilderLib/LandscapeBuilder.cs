@@ -498,10 +498,11 @@ namespace LandscapeBuilderLib
 
                 // If we have data for the corners, also flatten the terrain.
                 // TODO: Maybe spit out the airports that were missing data to alert the user as to which ones need to be done manually?
-                if(airport.RunwayCorners != null && airport.Name == "Hanover Co Muni")
+                if(airport.RunwayCorners != null)
                 {
-                    TerrainFlattener flattener = new TerrainFlattener(airport.RunwayCorners, airport.Altitude);
+                    TerrainFlattener flattener = new TerrainFlattener(airport.RunwayCorners, (short)airport.Altitude);
                     List<string> strings = flattener.ToStringList();
+                    flattener.Flatten();
                 }
             }
 

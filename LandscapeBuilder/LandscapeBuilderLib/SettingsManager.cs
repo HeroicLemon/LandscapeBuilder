@@ -29,6 +29,7 @@ namespace LandscapeBuilderLib
         public string OutputFinal { get; set; }
         public string OutputDDS { get { return Path.Combine(OutputFinal, "Textures"); } }
         public string OutputForestMap { get { return Path.Combine(OutputFinal, "ForestMaps"); } }
+        public string OutputHeightMap { get { return Path.Combine(OutputFinal, "HeightMaps"); } }
 
         // Local app data for storing settings.
         public string AppData { get; private set; }
@@ -48,14 +49,12 @@ namespace LandscapeBuilderLib
         public float LongitudeMax { get; set; } = -75.6f;
         public float LongitudeMin { get; set; } = -78.5f;
 
+        public static readonly int HeightMapResolution = 30;
+        public static readonly int PatchHeightMeters = 5760;
+
         private static readonly Lazy<SettingsManager> lazy = new Lazy<SettingsManager>(() => new SettingsManager());
         public static SettingsManager Instance {  get { return lazy.Value; } }
-
-        private SettingsManager()
-        {
-
-        }
-
+        
         public void InitSettings()
         {
             // Save the default directories.
@@ -117,6 +116,7 @@ namespace LandscapeBuilderLib
             Directory.CreateDirectory(OutputFinal);
             Directory.CreateDirectory(OutputDDS);
             Directory.CreateDirectory(OutputForestMap);
+            Directory.CreateDirectory(OutputHeightMap);
 
             Directory.CreateDirectory(AppData);
         }

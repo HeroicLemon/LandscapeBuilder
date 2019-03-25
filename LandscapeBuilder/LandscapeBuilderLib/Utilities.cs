@@ -21,7 +21,8 @@ namespace LandscapeBuilderLib
 
             Process process = new Process();
             process.StartInfo.FileName = "CoCoCo.exe";
-            process.StartInfo.Arguments = string.Format("{0} {1} {2}", SettingsManager.Instance.LandscapeName, latLong.Y, latLong.X);
+            // Need to round here because of "conversion failed" issues.
+            process.StartInfo.Arguments = string.Format("{0} {1} {2}", SettingsManager.Instance.LandscapeName, Math.Round(latLong.Y, 4), Math.Round(latLong.X, 4));
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.CreateNoWindow = true;
@@ -81,6 +82,22 @@ namespace LandscapeBuilderLib
             int tileY = int.Parse(tileName.Substring(2, 2));
 
             return new Point(tileX, tileY);
+        }
+
+        public static string GetPatchNameFromLandscapeCoordinates(PointF point)
+        {
+            // Each patch is 5760 x 5760 m.
+            point.X /= SettingsManager.PatchHeightMeters;
+            point.Y /= SettingsManager.PatchHeightMeters;
+
+            return string.Format("{0:00}{1:00}",Math.Floor(point.X), Math.Floor(point.Y));
+        }
+
+        public static PointF GetPatchCoordinatesFromLandscapeCoordinates(PointF point)
+        {
+            point.X = point.X % SettingsManager.PatchHeightMeters;
+            point.Y = point.Y % SettingsManager.PatchHeightMeters;
+            return point;
         }
 
         public static float FeetToMeters(float feet)
