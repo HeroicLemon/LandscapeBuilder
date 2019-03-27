@@ -41,8 +41,17 @@ namespace LandscapeBuilderLib
         public string ExecutableDir { get; private set; }
         #endregion
 
+        private string _landscapeName = string.Empty;
         [JsonProperty]
-        public string LandscapeName { get; set; } // TODO: When landscape name changes, will need to update some data.
+        public string LandscapeName
+        {
+            get { return _landscapeName; }
+            set
+            {
+                _landscapeName = value;
+                updateLandscape();
+            }
+        }
 
         // TODO: Should be able to parse these from the condor files. .trn?
         public float LatitudeMax { get; set; } = 37.75f;
@@ -147,6 +156,29 @@ namespace LandscapeBuilderLib
                         break;
                     }
                 }
+            }
+        }
+
+        private void updateLandscape()
+        {
+            if (CondorLandscapesDir != null)
+            {
+                string trnFile = string.Format("{0}.trn", LandscapeName);
+                byte[] trnHeader = File.ReadAllBytes(Path.Combine(CurrentLandscapeDir, trnFile));
+
+                // Parse the header
+                int x = BitConverter.ToInt32(trnHeader, 0x00);
+                int y = BitConverter.ToInt32(trnHeader, 0x04);
+                float xRes = BitConverter.ToSingle(trnHeader, 0x08);
+                float yRes = BitConverter.ToSingle(trnHeader, 0x0C);
+                float dunno = BitConverter.ToSingle(trnHeader, 0x10);
+                float bottomRightEasting = BitConverter.ToSingle(trnHeader, 0x14);
+                float bottomRightNorthing = BitConverter.ToSingle(trnHeader, 0x18);
+                int utmZone = BitConverter.ToInt32(trnHeader, 0x1C);
+                char utmHemisphere = BitConverter.ToChar(trnHeader, 0x20);
+
+                float topLeftEasting = bottomRightEasting - (x * xRes);
+                float topLeftNorthing = bottomRightNorthing - (y * yRes);
             }
         }
     }

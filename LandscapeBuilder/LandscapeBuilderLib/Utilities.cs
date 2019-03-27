@@ -74,7 +74,12 @@ namespace LandscapeBuilderLib
 
             return landscapeXY;
         }
-               
+           
+        public static PointF UTMToLatLong(float northing, float easting, int zone, char hemisphere)
+        {
+            return new PointF();
+        }
+
         public static Point GetTileCoordinatesFromName(string tileName)
         {
             int tileX = int.Parse(tileName.Substring(0, 2));

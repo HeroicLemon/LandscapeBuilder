@@ -5,6 +5,10 @@ using System.Runtime.InteropServices;
 
 namespace LandscapeBuilderLib
 {
+    // Wrapper class for Bitmap. 
+    // The default implementation of Bitmap locks and unlocks the bitmap every time a pixel is accessed, which increases processing time significantly.
+    // This wrapper allows direct access to the byte[] for the bitmap, which bypasses the locking issue.
+    // This is not a complete wrap of Bitmap, and is not recommended for use outside of LandscapeBuilder.
     public class BitmapWrapper
     {
         private Bitmap _bitmap;
