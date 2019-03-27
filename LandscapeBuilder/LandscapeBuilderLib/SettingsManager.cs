@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
+using System.Drawing;
 
 namespace LandscapeBuilderLib
 {
@@ -53,11 +54,8 @@ namespace LandscapeBuilderLib
             }
         }
 
-        // TODO: Should be able to parse these from the condor files. .trn?
-        public float LatitudeMax { get; set; } = 37.75f;
-        public float LatitudeMin { get; set; } = 36.35f;
-        public float LongitudeMax { get; set; } = -75.6f;
-        public float LongitudeMin { get; set; } = -78.5f;
+        public PointF LatLongTopLeft { get; private set; }
+        public PointF LatLongBottomRight { get; private set; }
 
         public static readonly int HeightMapResolution = 30;
         public static readonly int PatchHeightMeters = 5760;
@@ -179,6 +177,9 @@ namespace LandscapeBuilderLib
 
                 float topLeftEasting = bottomRightEasting - (x * xRes);
                 float topLeftNorthing = bottomRightNorthing - (y * yRes);
+
+                LatLongTopLeft = Utilities.UTMToLatLong(topLeftNorthing, topLeftEasting, utmZone, utmHemisphere);
+                LatLongBottomRight = Utilities.UTMToLatLong(bottomRightNorthing, bottomRightEasting, utmZone, utmHemisphere);
             }
         }
     }

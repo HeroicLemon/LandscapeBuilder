@@ -92,8 +92,9 @@ namespace LandscapeBuilderLib
 
         private bool coordinateWithinExtent(Coordinate coordinate)
         {
-            return coordinate.Y < SettingsManager.Instance.LatitudeMax && coordinate.Y > SettingsManager.Instance.LatitudeMin 
-                && coordinate.X < SettingsManager.Instance.LongitudeMax && coordinate.X > SettingsManager.Instance.LongitudeMin;
+            Envelope envelope = new Envelope(SettingsManager.Instance.LatLongTopLeft.X, SettingsManager.Instance.LatLongBottomRight.X, 
+                SettingsManager.Instance.LatLongTopLeft.Y, SettingsManager.Instance.LatLongBottomRight.Y);
+            return envelope.Contains(coordinate);
         }
 
         protected bool isAsphalt(string comp_code)
