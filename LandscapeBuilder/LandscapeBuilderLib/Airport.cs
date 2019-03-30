@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.IO;
 using System.Text;
 
 namespace LandscapeBuilderLib
@@ -38,7 +39,11 @@ namespace LandscapeBuilderLib
         public bool TowSecondaryLeftSide { get; private set; }
 
         // The lat/long of the four corners of the runway. Used for flattening the terrain around the runway.
-        public PointF[] RunwayCorners { get; private set; } 
+        public PointF[] RunwayCorners { get; private set; }
+
+        // Objects for writing .obj and .mtl files
+        ObjFile objFile = new ObjFile();
+        MtlFile mtlFile = new MtlFile();
 
         public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, bool asphalt = false, PointF[] runwayCorners = null, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
         {
@@ -56,8 +61,9 @@ namespace LandscapeBuilderLib
             TowSecondaryLeftSide = towSecondaryLeftSide;
             RunwayCorners = runwayCorners;
         }
-
-        public byte[] GetBytes()
+        
+        // Gets the bytes to be used to add the airport to the .apt file.
+        public byte[] GetAptBytes()
         {
             byte[] airportBytes = new byte[0x48];
 
@@ -76,6 +82,63 @@ namespace LandscapeBuilderLib
             copyIntoArray(airportBytes, BitConverter.GetBytes(TowSecondaryLeftSide), Offset.TowSecondaryLeftSide);
 
             return airportBytes;
+        }
+
+        public void GenerateObjMtlFile()
+        {
+            // Some of this stuff is currently hardcoded based on the object files I've created in blender and on the outputs from JBr's AirportMaker tool.
+            string materialName = "01_Default";
+
+            objFile.AddMtlLib(string.Format("{0}G", Name));
+            objFile.AddNewLine();
+            objFile.AddObject(Asphalt ? "Asphalt" : "Grass");
+            objFile.AddNewLine();
+            double x = Length / 2.0;
+            double y = 0.001;
+            double z = Width / 2.0;
+
+            objFile.AddVertexCoordinate(-x, y, z);
+            objFile.AddVertexCoordinate(x, y, z);
+            objFile.AddVertexCoordinate(x, y, -z);
+            objFile.AddVertexCoordinate(-x, y, -z);
+            objFile.AddNewLine();
+
+            objFile.AddVertexNormal(0, 1, -0);
+            objFile.AddNewLine();
+
+            objFile.AddTextureCoordinate(0, 0, 0);
+            objFile.AddTextureCoordinate(0.8, 0, 0);
+            objFile.AddTextureCoordinate(0.8, 0.12, 0);
+            objFile.AddTextureCoordinate(0, 0.12, 0);
+            objFile.AddNewLine();
+
+            objFile.AddUseMtl(materialName);
+            objFile.AddSmoothing(true);
+
+            FaceData[] data = new FaceData[3];
+            data[0] = new FaceData(1, 1, 1);
+            data[1] = new FaceData(2, 2, 1);
+            data[2] = new FaceData(3, 3, 1);
+            objFile.AddFace(data);
+
+            data[0] = new FaceData(3, 3, 1);
+            data[1] = new FaceData(4, 4, 1);
+            data[2] = new FaceData(1, 1, 1);
+            objFile.AddFace(data);
+
+            // Now the .mtl file
+            mtlFile.AddNewMtl(materialName);
+            mtlFile.AddSpecularExponent(10);
+            mtlFile.AddOpticalDensity(1.5);
+            mtlFile.AddDisolved(1);
+            mtlFile.AddTransmissionFilter(1, 1, 1);
+            mtlFile.AddIlluminationModel(2);
+            mtlFile.AddAmbientColor(1, 1, 1);
+            mtlFile.AddDiffuseColor(1, 1, 1);
+            mtlFile.AddSpecularColor(0, 0, 0);
+
+            objFile.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsDir, string.Format("{0}G.obj", Name)));
+            mtlFile.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsDir, string.Format("{0}G.mtl", Name)));
         }
 
         private void copyIntoArray(byte[] destinationArray, byte[] sourceArray, Offset offset)

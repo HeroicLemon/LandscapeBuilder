@@ -31,6 +31,7 @@ namespace LandscapeBuilderLib
         public string OutputDDSDir { get { return Path.Combine(OutputFinalDir, "Textures"); } }
         public string OutputForestMapDir { get { return Path.Combine(OutputFinalDir, "ForestMaps"); } }
         public string OutputHeightMapDir { get { return Path.Combine(OutputFinalDir, "HeightMaps"); } }
+        public string OutputAirportsDir {  get { return Path.Combine(OutputFinalDir, "Airports"); } }
 
         // Local app data for storing settings.
         public string AppDataDir { get; private set; }
@@ -84,9 +85,10 @@ namespace LandscapeBuilderLib
         // TODO: Find a more maintainable way of doing this.
         private void load(SettingsManager other)
         {
-            this.OutputDir = other.OutputDir;
-            this.InputDir = other.InputDir;
-            this.LandscapeName = other.LandscapeName;
+            OutputDir = other.OutputDir;
+            OutputFinalDir = Path.Combine(OutputDir, "Final");
+            InputDir = other.InputDir;
+            LandscapeName = other.LandscapeName;
         }
 
         private void initializeDefaultDirectories()
@@ -126,6 +128,7 @@ namespace LandscapeBuilderLib
             Directory.CreateDirectory(OutputDDSDir);
             Directory.CreateDirectory(OutputForestMapDir);
             Directory.CreateDirectory(OutputHeightMapDir);
+            Directory.CreateDirectory(OutputAirportsDir);
 
             Directory.CreateDirectory(AppDataDir);
         }

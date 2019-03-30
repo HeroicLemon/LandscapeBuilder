@@ -489,20 +489,25 @@ namespace LandscapeBuilderLib
                 // Combine all of the bytes to use for the .apt file
                 if (bytes == null)
                 {
-                    bytes = airport.GetBytes();
+                    bytes = airport.GetAptBytes();
                 }
                 else
                 {
-                    bytes = bytes.Concat(airport.GetBytes()).ToArray();
+                    bytes = bytes.Concat(airport.GetAptBytes()).ToArray();
                 }
 
                 // If we have data for the corners, also flatten the terrain.
                 // TODO: Maybe spit out the airports that were missing data to alert the user as to which ones need to be done manually?
-                if(airport.RunwayCorners != null)
+                //if(airport.RunwayCorners != null)
+                //{
+                //    TerrainFlattener flattener = new TerrainFlattener(airport.RunwayCorners, (short)airport.Altitude);
+                //    List<string> strings = flattener.ToStringList();
+                //    flattener.Flatten();
+                //}
+
+                if (airport.Name.Contains("Hanover"))
                 {
-                    TerrainFlattener flattener = new TerrainFlattener(airport.RunwayCorners, (short)airport.Altitude);
-                    List<string> strings = flattener.ToStringList();
-                    flattener.Flatten();
+                    airport.GenerateObjMtlFile();
                 }
             }
 
