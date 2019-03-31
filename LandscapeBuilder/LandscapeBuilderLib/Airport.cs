@@ -42,8 +42,10 @@ namespace LandscapeBuilderLib
         public PointF[] RunwayCorners { get; private set; }
 
         // Objects for writing .obj and .mtl files
-        ObjFile objFile = new ObjFile();
-        MtlFile mtlFile = new MtlFile();
+        ObjFile objFileG = new ObjFile();
+        MtlFile mtlFileG = new MtlFile();
+        ObjFile objFileO = new ObjFile();
+        MtlFile mtlFileO = new MtlFile();
 
         public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, bool asphalt = false, PointF[] runwayCorners = null, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
         {
@@ -84,61 +86,86 @@ namespace LandscapeBuilderLib
             return airportBytes;
         }
 
-        public void GenerateObjMtlFile()
+        public void GenerateObjectFiles()
+        {
+            generateGFiles();
+            generateOFiles();
+        }
+
+        // Generates the <airport name>G.obj and <airport name>G.mtl files for the grass/asphalt and paint objects.
+        private void generateGFiles()
         {
             // Some of this stuff is currently hardcoded based on the object files I've created in blender and on the outputs from JBr's AirportMaker tool.
             string materialName = "01_Default";
 
-            objFile.AddMtlLib(string.Format("{0}G", Name));
-            objFile.AddNewLine();
-            objFile.AddObject(Asphalt ? "Asphalt" : "Grass");
-            objFile.AddNewLine();
-            double x = Length / 2.0;
-            double y = 0.001;
-            double z = Width / 2.0;
+            objFileG.AddMtlLib(string.Format("{0}G", Name));
+            objFileG.AddNewLine();
+            objFileG.AddObject(Asphalt ? "Asphalt" : "Grass");
+            objFileG.AddNewLine();
+            float x = Length / 2.0f;
+            float y = 0.001f;
+            float z = Width / 2.0f;
 
-            objFile.AddVertexCoordinate(-x, y, z);
-            objFile.AddVertexCoordinate(x, y, z);
-            objFile.AddVertexCoordinate(x, y, -z);
-            objFile.AddVertexCoordinate(-x, y, -z);
-            objFile.AddNewLine();
+            objFileG.AddVertexCoordinate(new Vertex(-x, y, z));
+            objFileG.AddVertexCoordinate(new Vertex(x, y, z));
+            objFileG.AddVertexCoordinate(new Vertex(x, y, -z));
+            objFileG.AddVertexCoordinate(new Vertex(-x, y, -z));
+            objFileG.AddNewLine();
 
-            objFile.AddVertexNormal(0, 1, -0);
-            objFile.AddNewLine();
+            objFileG.AddVertexNormal(0, 1, -0);
+            objFileG.AddNewLine();
 
-            objFile.AddTextureCoordinate(0, 0, 0);
-            objFile.AddTextureCoordinate(0.8, 0, 0);
-            objFile.AddTextureCoordinate(0.8, 0.12, 0);
-            objFile.AddTextureCoordinate(0, 0.12, 0);
-            objFile.AddNewLine();
+            objFileG.AddTextureCoordinate(0, 0, 0);
+            objFileG.AddTextureCoordinate(0.8, 0, 0);
+            objFileG.AddTextureCoordinate(0.8, 0.12, 0);
+            objFileG.AddTextureCoordinate(0, 0.12, 0);
+            objFileG.AddNewLine();
 
-            objFile.AddUseMtl(materialName);
-            objFile.AddSmoothing(true);
+            objFileG.AddUseMtl(materialName);
+            objFileG.AddSmoothing(true);
 
             FaceData[] data = new FaceData[3];
             data[0] = new FaceData(1, 1, 1);
             data[1] = new FaceData(2, 2, 1);
             data[2] = new FaceData(3, 3, 1);
-            objFile.AddFace(data);
+            objFileG.AddFace(data);
 
             data[0] = new FaceData(3, 3, 1);
             data[1] = new FaceData(4, 4, 1);
             data[2] = new FaceData(1, 1, 1);
-            objFile.AddFace(data);
+            objFileG.AddFace(data);
 
             // Now the .mtl file
-            mtlFile.AddNewMtl(materialName);
-            mtlFile.AddSpecularExponent(10);
-            mtlFile.AddOpticalDensity(1.5);
-            mtlFile.AddDisolved(1);
-            mtlFile.AddTransmissionFilter(1, 1, 1);
-            mtlFile.AddIlluminationModel(2);
-            mtlFile.AddAmbientColor(1, 1, 1);
-            mtlFile.AddDiffuseColor(1, 1, 1);
-            mtlFile.AddSpecularColor(0, 0, 0);
+            mtlFileG.AddNewMtl(materialName);
+            mtlFileG.AddSpecularExponent(10);
+            mtlFileG.AddOpticalDensity(1.5);
+            mtlFileG.AddDisolved(1);
+            mtlFileG.AddTransmissionFilter(1, 1, 1);
+            mtlFileG.AddIlluminationModel(2);
+            mtlFileG.AddAmbientColor(1, 1, 1);
+            mtlFileG.AddDiffuseColor(1, 1, 1);
+            mtlFileG.AddSpecularColor(0, 0, 0);
 
-            objFile.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsDir, string.Format("{0}G.obj", Name)));
-            mtlFile.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsDir, string.Format("{0}G.mtl", Name)));
+            objFileG.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsObjDir, string.Format("{0}G.obj", Name)));
+            mtlFileG.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsObjDir, string.Format("{0}G.mtl", Name)));
+        }
+
+        // Generates the <airport name>O.obj and <airport name>O.mtl files for the 3D objects.
+        private void generateOFiles()
+        {
+            // Currently just generates a windsock halfway down the runway.
+            objFileO.AddMtlLib(string.Format("{0}O", Name));
+            objFileO.AddNewLine();
+            objFileO.AddWindsackPoleVertices(Width / 2f + 5);
+            objFileO.AddWindsockPoleStaticInfo();
+            objFileO.AddNewLine();
+            objFileO.AddWindsackVertices(Width / 2f + 5);
+            objFileO.AddWindsackStaticInfo();
+
+            mtlFileO.AddWindsockMtl();
+
+            objFileO.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsObjDir, string.Format("{0}O.obj", Name)));
+            mtlFileO.WriteFile(Path.Combine(SettingsManager.Instance.OutputAirportsObjDir, string.Format("{0}O.mtl", Name)));
         }
 
         private void copyIntoArray(byte[] destinationArray, byte[] sourceArray, Offset offset)

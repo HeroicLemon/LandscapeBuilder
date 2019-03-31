@@ -7,6 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="res\Windsock.mtl" />
+    <None Remove="res\Windsock.obj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="res\Windsock.mtl" />
+    <EmbeddedResource Include="res\Windsock.obj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="DotSpatial.Data" Version="1.9.0" />
     <PackageReference Include="DotSpatial.Mono" Version="1.9.0" />
     <PackageReference Include="DotSpatial.Projections" Version="1.9.0" />
@@ -16,6 +26,21 @@
     <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.110" />
     <PackageReference Include="System.Drawing.Common" Version="4.5.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Resources.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Update="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

@@ -25,6 +25,7 @@ namespace LandscapeBuilderLib
         public string OutputThermalMapDir { get { return Path.Combine(OutputDir, "ThermalMaps"); } }
         public string OutputThermalMapTilesDir {  get { return Path.Combine(OutputThermalMapDir, "Tiles"); } }
         public string OutputForestMapTilesDir { get { return Path.Combine(OutputDir, "ForestMaps"); } }
+        public string OutputAirportsObjDir { get { return Path.Combine(OutputDir, "Airports"); } }
 
         // The final outputs to be used in Condor.
         public string OutputFinalDir { get; set; }
@@ -123,6 +124,7 @@ namespace LandscapeBuilderLib
             Directory.CreateDirectory(OutputForestMapTilesDir);
             Directory.CreateDirectory(OutputThermalMapDir);
             Directory.CreateDirectory(OutputThermalMapTilesDir);
+            Directory.CreateDirectory(OutputAirportsObjDir);
 
             Directory.CreateDirectory(OutputFinalDir);
             Directory.CreateDirectory(OutputDDSDir);

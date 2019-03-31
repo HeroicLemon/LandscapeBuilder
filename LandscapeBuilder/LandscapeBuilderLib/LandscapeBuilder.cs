@@ -507,7 +507,7 @@ namespace LandscapeBuilderLib
 
                 if (airport.Name.Contains("Hanover"))
                 {
-                    airport.GenerateObjMtlFile();
+                    airport.GenerateObjectFiles();
                 }
             }
 
