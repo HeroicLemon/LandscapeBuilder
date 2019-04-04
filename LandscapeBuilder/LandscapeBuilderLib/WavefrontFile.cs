@@ -31,13 +31,9 @@ namespace LandscapeBuilderLib
             }
         }
 
-        public void WriteFile(string path)
-        {
-            File.WriteAllText(path, FileText);
-        }
+        public abstract void WriteFile(string path);
     }
-
-
+    
     public class ObjFile : WavefrontFile
     {
 
@@ -52,27 +48,21 @@ namespace LandscapeBuilderLib
             AddNewLine();
         }
 
-        public void AddTextureCoordinate(double u, double v = 0, double w = 0)
+        public void AddTextureCoordinate(Vertex vertex)
         {
-            FileText += string.Format("vt {0:0.0000} {1:0.0000} {2:0.0000}", u, v, w);
+            FileText += string.Format("vt {0:0.0000} {1:0.0000} {2:0.0000}", vertex.X, vertex.Y, vertex.Z);
             AddNewLine();
         }
 
-        public void AddVertexNormal(double x, double y, double z)
+        public void AddVertexNormal(Vertex vertex)
         {
-            FileText += string.Format("vn {0:0.0000} {1:0.0000} {2:0.0000}", x, y, z);
+            FileText += string.Format("vn {0:0.0000} {1:0.0000} {2:0.0000}", vertex.X, vertex.Y, vertex.Z);
             AddNewLine();
         }
 
-        public void AddFace(FaceData[] faceData)
+        public void AddFace(Face face)
         {
-            string faceString = string.Empty;
-            foreach(FaceData data in faceData)
-            {
-                faceString += string.Format(" {0}", data.ToString());
-            }
-
-            FileText += string.Format("f{0}", faceString);
+            FileText += string.Format("f {0}", face.ToString());
             AddNewLine();
         }
 
@@ -106,69 +96,10 @@ namespace LandscapeBuilderLib
             AddNewLine();
         }
 
-        // Hardcode the windsock stuff for now.
-        public void AddWindsackPoleVertices(float offsetX = 0, float offsetZ = 0)
-        {
-            string[] vertexStrings= Encoding.ASCII.GetString(Properties.Resources.WindsockOBJ, 0x42, 0x4D2).Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-            List<Vertex> vertices = new List<Vertex>();
-            foreach(string vertex in vertexStrings)
-            {
-                string[] coordinates = vertex.Substring(2).Split(' ');
-                float x = float.Parse(coordinates[0]);
-                float y = float.Parse(coordinates[1]);
-                float z = float.Parse(coordinates[2]);
-
-                vertices.Add(new Vertex(x, y, z));
-            }
-
-            foreach(Vertex vertex in vertices)
-            {
-                Vertex tmp = vertex;
-                tmp.X += offsetX;
-                tmp.Z += offsetZ;
-                AddVertexCoordinate(tmp);
-            }
-
-            AddNewLine();
-        }
-
-        public void AddWindsockPoleStaticInfo()
-        {
-            FileText += Encoding.ASCII.GetString(Properties.Resources.WindsockOBJ, 0x518, 0x124B);
-            AddNewLine();
-        }
-
-        public void AddWindsackVertices(float offsetX = 0, float offsetZ = 0)
-        {
-            string[] vertexStrings = Encoding.ASCII.GetString(Properties.Resources.WindsockOBJ, 0x1767, 0x49).Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-            List<Vertex> vertices = new List<Vertex>();
-            foreach (string vertex in vertexStrings)
-            {
-                string[] coordinates = vertex.Substring(2).Split(' ');
-                float x = float.Parse(coordinates[0]);
-                float y = float.Parse(coordinates[1]);
-                float z = float.Parse(coordinates[2]);
-
-                vertices.Add(new Vertex(x, y, z));
-            }
-
-            foreach (Vertex vertex in vertices)
-            {
-                Vertex tmp = vertex;
-                tmp.X += offsetX;
-                tmp.Z += offsetZ;
-                AddVertexCoordinate(tmp);
-            }
-
-            AddNewLine();
-        }
-
-        public void AddWindsackStaticInfo()
-        {
-            FileText += Encoding.ASCII.GetString(Properties.Resources.WindsockOBJ, 0x17B4, 0x59);
-            AddNewLine();
+        public override void WriteFile(string path)
+        {            
+            path += ".obj";
+            File.WriteAllText(path, FileText);
         }
     }
 
@@ -191,7 +122,7 @@ namespace LandscapeBuilderLib
             AddNewLine();
         }
 
-        public void AddDisolved(double d)
+        public void AddDissolved(double d)
         {
             // Some implementations use d (disolved) where 1 is opaque and some use Tr (transparent) where 0 is opaque.
             FileText += string.Format("d {0:0.0000}", d);
@@ -200,10 +131,13 @@ namespace LandscapeBuilderLib
             AddNewLine();
         }
 
-        public void AddTransmissionFilter(double r, double g, double b)
+        public void AddTransmissionFilter(MtlColor color)
         {
-            FileText += string.Format("Tf {0:0.0000} {1:0.0000} {2:0.0000}", r, g, b);
-            AddNewLine();
+            if (color != null)
+            {
+                FileText += string.Format("Tf {0:0.0000} {1:0.0000} {2:0.0000}", color.R, color.G, color.B);
+                AddNewLine();
+            }
         }
 
         public void AddIlluminationModel(int illuminationModel)
@@ -212,22 +146,31 @@ namespace LandscapeBuilderLib
             AddNewLine();
         }
 
-        public void AddAmbientColor(double r, double g, double b)
+        public void AddAmbientColor(MtlColor color)
         {
-            FileText += string.Format("Ka {0:0.0000} {1:0.0000} {2:0.0000}", r, g, b);
-            AddNewLine();
+            if (color != null)
+            {
+                FileText += string.Format("Ka {0:0.0000} {1:0.0000} {2:0.0000}", color.R, color.G, color.B);
+                AddNewLine();
+            }
         }
 
-        public void AddDiffuseColor(double r, double g, double b)
+        public void AddDiffuseColor(MtlColor color)
         {
-            FileText += string.Format("Kd {0:0.0000} {1:0.0000} {2:0.0000}", r, g, b);
-            AddNewLine();
+            if (color != null)
+            {
+                FileText += string.Format("Kd {0:0.0000} {1:0.0000} {2:0.0000}", color.R, color.G, color.B);
+                AddNewLine();
+            }
         }
 
-        public void AddSpecularColor(double r, double g, double b)
+        public void AddSpecularColor(MtlColor color)
         {
-            FileText += string.Format("Ks {0:0.0000} {1:0.0000} {2:0.0000}", r, g, b);
-            AddNewLine();
+            if (color != null)
+            {
+                FileText += string.Format("Ks {0:0.0000} {1:0.0000} {2:0.0000}", color.R, color.G, color.B);
+                AddNewLine();
+            }
         }
 
         public void AddSpecularExponent(double ns)
@@ -236,44 +179,10 @@ namespace LandscapeBuilderLib
             AddNewLine();
         }
 
-        // Hardcode windsock stuff for now.
-        public void AddWindsockMtl()
+        public override void WriteFile(string path)
         {
-            FileText += Encoding.ASCII.GetString(Properties.Resources.WindsockMTL);
-            AddNewLine();
-        }
-    }
-
-    public struct Vertex
-    {
-        public float X { get; set; }
-        public float Y { get; set; }
-        public float Z { get; set; }
-
-        public Vertex(float x = 0, float y = 0, float z = 0)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-    }
-
-    public struct FaceData
-    {
-        int VertexIndex { get; set; }
-        int TextureIndex { get; set; }
-        int NormalIndex { get; set; }
-
-        public FaceData(int vertexIndex = 1, int textureIndex = 1, int normalIndex = 1)
-        {
-            VertexIndex = vertexIndex;
-            TextureIndex = textureIndex;
-            NormalIndex = normalIndex;
-        }
-
-        public override string ToString()
-        {
-            return string.Format(@"{0}/{1}/{2}", VertexIndex, TextureIndex, NormalIndex);
+            path += ".mtl";
+            File.WriteAllText(path, FileText);
         }
     }
 }
