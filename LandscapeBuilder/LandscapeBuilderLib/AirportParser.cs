@@ -26,64 +26,67 @@ namespace LandscapeBuilderLib
             string runwayShapeFilePath = Path.Combine(SettingsManager.Instance.InputAirportDir, "Runways.shp");
             string airportShapeFilePath = Path.Combine(SettingsManager.Instance.InputAirportDir, "Airports.shp");
 
-            PolygonShapefile runwayShapefile = new PolygonShapefile(runwayShapeFilePath);
-            PointShapefile airportShapefile = new PointShapefile(airportShapeFilePath);
-
-            // It'd be nice to limit the airports to just those within the extents of the landscape, but I don't think that's possible as lat/long are text fields...
-            // TODO: It may be possible to do that with the spatialite database.
-            List<IFeature> airportFeatures = airportShapefile.SelectByAttribute("TYPE_CODE='AD'");
-            foreach (Feature airportFeature in airportFeatures)
+            if (File.Exists(runwayShapeFilePath) && File.Exists(airportShapeFilePath))
             {
-                DotSpatial.Topology.Point airportPoint = airportFeature.BasicGeometry as DotSpatial.Topology.Point;
-                if (coordinateWithinExtent(airportPoint.Coordinate))
+                PolygonShapefile runwayShapefile = new PolygonShapefile(runwayShapeFilePath);
+                PointShapefile airportShapefile = new PointShapefile(airportShapeFilePath);
+
+                // It'd be nice to limit the airports to just those within the extents of the landscape, but I don't think that's possible as lat/long are text fields...
+                // TODO: It may be possible to do that with the spatialite database.
+                List<IFeature> airportFeatures = airportShapefile.SelectByAttribute("TYPE_CODE='AD'");
+                foreach (Feature airportFeature in airportFeatures)
                 {
-                    string name = (string)airportFeature.DataRow["NAME"];
-
-                    string airportId = (string)airportFeature.DataRow["GLOBAL_ID"];
-                    // For now just get the runway that happens to be first.
-                    List<IFeature> runwayFeatures = runwayShapefile.SelectByAttribute(string.Format("AIRPORT_ID='{0}'", airportId));
-                    IFeature runwayFeature = runwayFeatures.FirstOrDefault();
-
-                    Coordinate runwayCoordinate;
-                    // For the case of a single runway, use the airport's coordinate.
-                    if(runwayFeatures.Count == 1)
+                    DotSpatial.Topology.Point airportPoint = airportFeature.BasicGeometry as DotSpatial.Topology.Point;
+                    if (coordinateWithinExtent(airportPoint.Coordinate))
                     {
-                        runwayCoordinate = airportPoint.Coordinate;
-                    }
-                    // Otherwise, use the four corners of the runway to determine the center lat/long of the runway. 
-                    else
-                    {
-                        runwayCoordinate = getCenterLatLongFromCorners(runwayFeature.Coordinates);
-                        
-                        // Some of the data in the shapefile is bad, with runways centered around 0, 0.
-                        // If the result above is not within the extent, use the airport's coordinate and hope for the best.
-                        if(!coordinateWithinExtent(runwayCoordinate))
+                        string name = (string)airportFeature.DataRow["NAME"];
+
+                        string airportId = (string)airportFeature.DataRow["GLOBAL_ID"];
+                        // For now just get the runway that happens to be first.
+                        List<IFeature> runwayFeatures = runwayShapefile.SelectByAttribute(string.Format("AIRPORT_ID='{0}'", airportId));
+                        IFeature runwayFeature = runwayFeatures.FirstOrDefault();
+
+                        Coordinate runwayCoordinate;
+                        // For the case of a single runway, use the airport's coordinate.
+                        if (runwayFeatures.Count == 1)
                         {
                             runwayCoordinate = airportPoint.Coordinate;
-                        }     
-                    }
-
-                    float latitude = (float)runwayCoordinate.Y;
-                    float longitude = (float)runwayCoordinate.X;
-                    float altitude = Utilities.FeetToMeters(float.Parse(airportFeature.DataRow["ELEVATION"].ToString()));
-                    int direction = getDirection(runwayFeature, airportFeature.DataRow["IDENT"].ToString());
-
-                    int length = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["LENGTH"].ToString())));
-                    int width = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["WIDTH"].ToString())));
-
-                    bool asphalt = isAsphalt((string)runwayFeature.DataRow["COMP_CODE"]);
-
-                    PointF[] corners = null;
-                    if (coordinateWithinExtent(runwayFeature.Coordinates.FirstOrDefault()))
-                    {
-                        corners = new PointF[4];
-                        for (int i = 0; i < corners.Length; i++)
-                        {
-                            corners[i] = new PointF((float)runwayFeature.Coordinates[i].X, (float)runwayFeature.Coordinates[i].Y);
                         }
-                    }
+                        // Otherwise, use the four corners of the runway to determine the center lat/long of the runway. 
+                        else
+                        {
+                            runwayCoordinate = getCenterLatLongFromCorners(runwayFeature.Coordinates);
 
-                    airports.Add(new Airport(name, latitude, longitude, altitude, direction, length, width, asphalt, corners));
+                            // Some of the data in the shapefile is bad, with runways centered around 0, 0.
+                            // If the result above is not within the extent, use the airport's coordinate and hope for the best.
+                            if (!coordinateWithinExtent(runwayCoordinate))
+                            {
+                                runwayCoordinate = airportPoint.Coordinate;
+                            }
+                        }
+
+                        float latitude = (float)runwayCoordinate.Y;
+                        float longitude = (float)runwayCoordinate.X;
+                        float altitude = Utilities.FeetToMeters(float.Parse(airportFeature.DataRow["ELEVATION"].ToString()));
+                        int direction = getDirection(runwayFeature, airportFeature.DataRow["IDENT"].ToString());
+
+                        int length = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["LENGTH"].ToString())));
+                        int width = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["WIDTH"].ToString())));
+
+                        bool asphalt = isAsphalt((string)runwayFeature.DataRow["COMP_CODE"]);
+
+                        PointF[] corners = null;
+                        if (coordinateWithinExtent(runwayFeature.Coordinates.FirstOrDefault()))
+                        {
+                            corners = new PointF[4];
+                            for (int i = 0; i < corners.Length; i++)
+                            {
+                                corners[i] = new PointF((float)runwayFeature.Coordinates[i].X, (float)runwayFeature.Coordinates[i].Y);
+                            }
+                        }
+
+                        airports.Add(new Airport(name, latitude, longitude, altitude, direction, length, width, asphalt, corners));
+                    }
                 }
             }
 

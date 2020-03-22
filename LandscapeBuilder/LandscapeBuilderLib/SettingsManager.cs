@@ -70,6 +70,9 @@ namespace LandscapeBuilderLib
             // Save the default directories.
             initializeDefaultDirectories();
             findCondor();
+
+            CreateDirectories();
+
             if (File.Exists(Path.Combine(AppDataDir, "settings.conf")))
             {
                 string json = File.ReadAllText(Path.Combine(AppDataDir, "settings.conf"));
@@ -80,7 +83,6 @@ namespace LandscapeBuilderLib
                 SaveSettings();
             }
 
-            CreateDirectories();
         }
 
         // TODO: Find a more maintainable way of doing this.
@@ -167,24 +169,29 @@ namespace LandscapeBuilderLib
             if (CondorLandscapesDir != null)
             {
                 string trnFile = string.Format("{0}.trn", LandscapeName);
-                byte[] trnHeader = File.ReadAllBytes(Path.Combine(CurrentLandscapeDir, trnFile));
+                string trnPath = Path.Combine(CurrentLandscapeDir, trnFile);
 
-                // Parse the header
-                int x = BitConverter.ToInt32(trnHeader, 0x00);
-                int y = BitConverter.ToInt32(trnHeader, 0x04);
-                float xRes = BitConverter.ToSingle(trnHeader, 0x08);
-                float yRes = BitConverter.ToSingle(trnHeader, 0x0C);
-                float dunno = BitConverter.ToSingle(trnHeader, 0x10);
-                float bottomRightEasting = BitConverter.ToSingle(trnHeader, 0x14);
-                float bottomRightNorthing = BitConverter.ToSingle(trnHeader, 0x18);
-                int utmZone = BitConverter.ToInt32(trnHeader, 0x1C);
-                char utmHemisphere = BitConverter.ToChar(trnHeader, 0x20);
+                if (File.Exists(trnPath))
+                {
+                    byte[] trnHeader = File.ReadAllBytes(trnPath);
 
-                float topLeftEasting = bottomRightEasting - (x * xRes);
-                float topLeftNorthing = bottomRightNorthing - (y * yRes);
+                    // Parse the header
+                    int x = BitConverter.ToInt32(trnHeader, 0x00);
+                    int y = BitConverter.ToInt32(trnHeader, 0x04);
+                    float xRes = BitConverter.ToSingle(trnHeader, 0x08);
+                    float yRes = BitConverter.ToSingle(trnHeader, 0x0C);
+                    float dunno = BitConverter.ToSingle(trnHeader, 0x10);
+                    float bottomRightEasting = BitConverter.ToSingle(trnHeader, 0x14);
+                    float bottomRightNorthing = BitConverter.ToSingle(trnHeader, 0x18);
+                    int utmZone = BitConverter.ToInt32(trnHeader, 0x1C);
+                    char utmHemisphere = BitConverter.ToChar(trnHeader, 0x20);
 
-                LatLongTopLeft = Utilities.UTMToLatLong(topLeftNorthing, topLeftEasting, utmZone, utmHemisphere);
-                LatLongBottomRight = Utilities.UTMToLatLong(bottomRightNorthing, bottomRightEasting, utmZone, utmHemisphere);
+                    float topLeftEasting = bottomRightEasting - (x * xRes);
+                    float topLeftNorthing = bottomRightNorthing - (y * yRes);
+
+                    LatLongTopLeft = Utilities.UTMToLatLong(topLeftNorthing, topLeftEasting, utmZone, utmHemisphere);
+                    LatLongBottomRight = Utilities.UTMToLatLong(bottomRightNorthing, bottomRightEasting, utmZone, utmHemisphere);
+                }
             }
         }
     }

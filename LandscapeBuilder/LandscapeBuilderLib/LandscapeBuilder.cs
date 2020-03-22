@@ -504,12 +504,14 @@ namespace LandscapeBuilderLib
                     List<string> strings = flattener.ToStringList();
                     flattener.Flatten();
                 }
-
                 airport.GenerateObjects();
             }
 
             // Write to .apt file.
-            File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
+            if (bytes != null)
+            {
+                File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
+            }
         }
 
         // Handler to output from processes to the Console.

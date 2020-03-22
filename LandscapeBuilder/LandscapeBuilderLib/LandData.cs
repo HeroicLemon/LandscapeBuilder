@@ -1,5 +1,6 @@
 ﻿using Newtonsoft.Json;
 using System.Drawing;
+using System.IO;
 
 namespace LandscapeBuilderLib
 {
@@ -68,13 +69,23 @@ namespace LandscapeBuilderLib
         public TexturedLandData(string path, Color thermalColor, string description = "", ForestType forestType = ForestType.None, bool isWater = false, bool isDefault = false) : base(thermalColor, description, forestType, isWater, isDefault)
         {
             Path = path;
-            Texture = new BitmapWrapper(path);
+            // TODO: Need to handle case where textures do not load properly.
+            if (File.Exists(Path))
+            {
+                Texture = new BitmapWrapper(path);
+            }
         }
 
         public override Color GetColor(int i, int j)
         {
-            Color color = Texture.GetPixel(i, j);
-            color = AdjustAlphaIfWater(color);
+            // TODO: Improve error handling here instead of just outputting white.
+            Color color = Color.White;
+            if(Texture != null)
+            {
+                color = Texture.GetPixel(i, j);
+                color = AdjustAlphaIfWater(color);
+            }
+
             return color;
         }
     }

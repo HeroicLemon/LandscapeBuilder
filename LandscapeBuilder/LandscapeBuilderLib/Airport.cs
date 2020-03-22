@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace LandscapeBuilderLib
 {
@@ -43,7 +44,9 @@ namespace LandscapeBuilderLib
 
         public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, bool asphalt = false, PointF[] runwayCorners = null, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
         {
-            Name = name;
+            // TODO: Really only need to do this for the file names...
+            Regex regex = new Regex(@"[<>:""/\\|?*]");
+            Name = regex.Replace(name, "-");
             Latitude = latitude;
             Longitude = longitude;
             Altitude = altitude;
