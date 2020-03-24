@@ -30,7 +30,22 @@ namespace LandscapeBuilderLib
         public float Latitude { get; private set; }
         public float Longitude { get; private set; }
         public float Altitude { get; private set; }
-        public int Direction { get; private set; }
+        public float Direction { get; private set; }
+
+        // V2 of the landscape editor supports direction headings to .01 degrees, but it's still an integer with a special format.
+        public int DirectionOutput 
+        { 
+            get 
+            {
+                string formatted = Direction.ToString("0.00");
+                string[] parts = formatted.Split('.');
+
+                int whole = int.Parse(parts[0]);
+                int fractional = int.Parse(parts[1]);
+
+                return 100000 + (whole * 100) + fractional;
+            } 
+        }
         public int Length { get; private set; }
         public int Width { get; private set; }
         public bool Asphalt { get; private set; }
@@ -42,7 +57,7 @@ namespace LandscapeBuilderLib
         // The lat/long of the four corners of the runway. Used for flattening the terrain around the runway.
         public PointF[] RunwayCorners { get; private set; }
 
-        public Airport(string name, float latitude, float longitude, float altitude, int direction, int length, int width, bool asphalt = false, PointF[] runwayCorners = null, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
+        public Airport(string name, float latitude, float longitude, float altitude, float direction, int length, int width, bool asphalt = false, PointF[] runwayCorners = null, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
         {
             // TODO: Really only need to do this for the file names...
             Regex regex = new Regex(@"[<>:""/\\|?*]");
@@ -71,7 +86,7 @@ namespace LandscapeBuilderLib
             copyIntoArray(airportBytes, BitConverter.GetBytes(Latitude), Offset.Latitude);
             copyIntoArray(airportBytes, BitConverter.GetBytes(Longitude), Offset.Longitude);
             copyIntoArray(airportBytes, BitConverter.GetBytes(Altitude), Offset.Altitude);
-            copyIntoArray(airportBytes, BitConverter.GetBytes(Direction), Offset.Direction);
+            copyIntoArray(airportBytes, BitConverter.GetBytes(DirectionOutput), Offset.Direction);
             copyIntoArray(airportBytes, BitConverter.GetBytes(Length), Offset.Length);
             copyIntoArray(airportBytes, BitConverter.GetBytes(Width), Offset.Width);
             copyIntoArray(airportBytes, BitConverter.GetBytes(Asphalt), Offset.Asphalt);

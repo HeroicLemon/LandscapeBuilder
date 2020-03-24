@@ -40,7 +40,6 @@ namespace LandscapeBuilderLib
                     if (coordinateWithinExtent(airportPoint.Coordinate))
                     {
                         string name = (string)airportFeature.DataRow["NAME"];
-
                         string airportId = (string)airportFeature.DataRow["GLOBAL_ID"];
                         // For now just get the runway that happens to be first.
                         List<IFeature> runwayFeatures = runwayShapefile.SelectByAttribute(string.Format("AIRPORT_ID='{0}'", airportId));
@@ -68,7 +67,7 @@ namespace LandscapeBuilderLib
                         float latitude = (float)runwayCoordinate.Y;
                         float longitude = (float)runwayCoordinate.X;
                         float altitude = Utilities.FeetToMeters(float.Parse(airportFeature.DataRow["ELEVATION"].ToString()));
-                        int direction = getDirection(runwayFeature, airportFeature.DataRow["IDENT"].ToString());
+                        float direction = getDirection(runwayFeature, airportFeature.DataRow["IDENT"].ToString());
 
                         int length = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["LENGTH"].ToString())));
                         int width = (int)Math.Round(Utilities.FeetToMeters(float.Parse(runwayFeature.DataRow["WIDTH"].ToString())));
@@ -124,9 +123,9 @@ namespace LandscapeBuilderLib
             return isAsphalt;
         }
 
-        private int getDirection(IFeature runwayFeature, string airportId)
+        private float getDirection(IFeature runwayFeature, string airportId)
         {
-            int direction = int.MinValue;
+            float direction = float.MinValue;
             string designator = runwayFeature.DataRow["DESIGNATOR"].ToString();
 
             // There is a lot of bad runway data in the shapefile, so first we'll try to get the direction from the NASR database.
@@ -150,7 +149,7 @@ namespace LandscapeBuilderLib
                                     string alignment = runwayReader["base_runway_end_true_alignment"].ToString();
                                     if (alignment != string.Empty)
                                     {
-                                        int.TryParse(alignment, out direction);
+                                        float.TryParse(alignment, out direction);
                                     }
                                 }
                             }
@@ -160,7 +159,7 @@ namespace LandscapeBuilderLib
             }
 
             // Check to see if we managed to get the direction from the NASR database.
-            if(direction == int.MinValue)
+            if(direction == float.MinValue)
             {
                 // If we can get valid lat/long from the corners, go ahead and get the direction as well.
                 if(coordinateWithinExtent(getCenterLatLongFromCorners(runwayFeature.Coordinates)))
@@ -218,7 +217,7 @@ namespace LandscapeBuilderLib
                             {
                                 // Pull any letters out
                                 designator = Regex.Replace(designator, "[^0-9.]", "");
-                                if(int.TryParse(designator, out direction))
+                                if(float.TryParse(designator, out direction))
                                 {
                                     direction *= 10;
                                 }
@@ -233,11 +232,9 @@ namespace LandscapeBuilderLib
         }
 
         // TODO: This mostly works, but I think I need to account for magnetic variation.
-        private int getDirectionFromCorners(IList<Coordinate> corners)
+        private float getDirectionFromCorners(IList<Coordinate> corners)
         {
-            int direction;
-
-            direction = (int)Math.Round(Math.Atan2(corners[0].X - corners[3].X, corners[0].Y - corners[3].Y) * (180 / Math.PI));
+            float direction = (float)(Math.Atan2(corners[0].X - corners[3].X, corners[0].Y - corners[3].Y) * (180 / Math.PI));
 
             if (direction < 0)
             {
