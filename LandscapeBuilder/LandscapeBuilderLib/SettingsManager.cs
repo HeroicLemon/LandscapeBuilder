@@ -71,8 +71,6 @@ namespace LandscapeBuilderLib
             initializeDefaultDirectories();
             findCondor();
 
-            CreateDirectories();
-
             if (File.Exists(Path.Combine(AppDataDir, "settings.conf")))
             {
                 string json = File.ReadAllText(Path.Combine(AppDataDir, "settings.conf"));
@@ -82,6 +80,9 @@ namespace LandscapeBuilderLib
             {
                 SaveSettings();
             }
+
+            // TODO: Test this again with a clean repo
+            CreateDirectories();
 
         }
 

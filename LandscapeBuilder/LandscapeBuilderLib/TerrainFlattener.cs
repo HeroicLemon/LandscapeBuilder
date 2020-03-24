@@ -64,20 +64,11 @@ namespace LandscapeBuilderLib
         {
             Point[] cornersLandscapeXY = new Point[cornersLatLong.Length];
             PointF[] cornersLandscapeXYUnrounded = new PointF[cornersLatLong.Length];
-
-            bool missingCoCoCo = false;
             for (int i = 0; i < cornersLandscapeXY.Length; i++)
             {
                 // TODO: This is assuming that 0 is TL, 1 is TR, 2 is BR and 3 is BL. Need to confirm this is true for all cases.
                 // Convert lat/long to the landscape's XY coordinates.
-                PointF landscapeXY = Utilities.LatLongToLandscapeXY(cornersLatLong[i], ref missingCoCoCo);
-
-                if (missingCoCoCo)
-                {
-                    break;
-                }
-
-                cornersLandscapeXYUnrounded[i] = landscapeXY;
+                cornersLandscapeXYUnrounded[i] = Utilities.LatLongToLandscapeXY(cornersLatLong[i]); ;
             }
 
             // Store in the member variable for display purposes.

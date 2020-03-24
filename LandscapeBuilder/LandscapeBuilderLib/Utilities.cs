@@ -3,77 +3,106 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Drawing;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace LandscapeBuilderLib
 {
     public static class Utilities
     {
+        [DllImport("LatLonXY64.dll")]
+        public static extern bool xytolatlon_(out float x, out float y, out float lat, out float lon);
+        [DllImport("LatLonXY64.dll")]
+        public static extern bool latlontoxy_(out float lat, out float lon, out float x, out float y);
+        [DllImport("LatLonXY64.dll")]
+        public static extern bool utm_init_c_(string file, out float xmax, out float ymax);
+
         public static double GetSlope(PointF p1, PointF p2)
         {
             return (double)(p2.Y - p1.Y) / (double)(p2.X - p1.X);
         }
 
-        // Uses CoCoCo to translate the lat/long corners into the landscape's XY coordinates.
-        public static PointF LatLongToLandscapeXY(PointF latLong, ref bool missingCoCoCo)
+        public static PointF LatLongToLandscapeXY(PointF latLong)
         {
-            PointF landscapeXY = new Point(-1, -1);
+            float xmax, ymax = 0;
+            float lat = latLong.Y;
+            float lon = latLong.X;
+            float x = -1;
+            float y = -1;
 
-            Process process = new Process();
-            process.StartInfo.FileName = "CoCoCo.exe";
-            process.StartInfo.Arguments = string.Format("{0} {1} {2}", SettingsManager.Instance.LandscapeName, latLong.Y, latLong.X);
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = true;
-            process.StartInfo.CreateNoWindow = true;
-
-            // Make sure working directory is set up properly so that CoTaCo.ini can be parsed.
-            if (!File.Exists(Path.Combine(SettingsManager.Instance.ExecutableDir, process.StartInfo.FileName)))
+            if (utm_init_c_("E:\\Program Files (x86)\\Condor2\\Landscapes\\CentralVA\\CentralVA.trn", out xmax, out ymax))
             {
-                foreach (string path in Environment.GetEnvironmentVariable("PATH").Split(';'))
+                if (!latlontoxy_(out lat, out lon, out x, out y))
                 {
-                    if (File.Exists(Path.Combine(path, process.StartInfo.FileName)))
-                    {
-                        process.StartInfo.WorkingDirectory = path;
-                        break;
-                    }
-                }
+                    Console.WriteLine("Conversion failed");
+                }    
             }
+            else
+                Console.WriteLine("Conversion could not be initialized");
 
-            try
-            {
-                process.Start();
-
-                float posX = float.MinValue;
-                float posY = float.MinValue;
-                while (!process.StandardOutput.EndOfStream)
-                {
-                    string line = process.StandardOutput.ReadLine();
-                    if (line.Contains("TPPosX"))
-                    {
-                        float.TryParse(line.Substring(line.IndexOf('=') + 1), out posX);
-                    }
-                    else if (line.Contains("TPPosY"))
-                    {
-                        float.TryParse(line.Substring(line.IndexOf('=') + 1), out posY);
-                    }
-                }
-
-                process.WaitForExit();
-
-
-                if (posX > float.MinValue && posY > float.MinValue)
-                {
-                    landscapeXY = new PointF(posX, posY);
-                }
-            }
-            catch (System.ComponentModel.Win32Exception)
-            {
-                missingCoCoCo = true;
-                //writeLine(string.Format("Failed to run {0}. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable));
-            }
-
-            return landscapeXY;
+            return new PointF(x, y);
         }
+
+        //// Uses CoCoCo to translate the lat/long corners into the landscape's XY coordinates.
+        //public static PointF LatLongToLandscapeXY(PointF latLong, ref bool missingCoCoCo)
+        //{
+        //    PointF landscapeXY = new Point(-1, -1);
+
+        //    Process process = new Process();
+        //    process.StartInfo.FileName = "CoCoCo.exe";
+        //    process.StartInfo.Arguments = string.Format("{0} {1} {2}", SettingsManager.Instance.LandscapeName, latLong.Y, latLong.X);
+        //    process.StartInfo.UseShellExecute = false;
+        //    process.StartInfo.RedirectStandardOutput = true;
+        //    process.StartInfo.CreateNoWindow = true;
+
+        //    // Make sure working directory is set up properly so that CoTaCo.ini can be parsed.
+        //    if (!File.Exists(Path.Combine(SettingsManager.Instance.ExecutableDir, process.StartInfo.FileName)))
+        //    {
+        //        foreach (string path in Environment.GetEnvironmentVariable("PATH").Split(';'))
+        //        {
+        //            if (File.Exists(Path.Combine(path, process.StartInfo.FileName)))
+        //            {
+        //                process.StartInfo.WorkingDirectory = path;
+        //                break;
+        //            }
+        //        }
+        //    }
+
+        //    try
+        //    {
+        //        process.Start();
+
+        //        float posX = float.MinValue;
+        //        float posY = float.MinValue;
+        //        while (!process.StandardOutput.EndOfStream)
+        //        {
+        //            string line = process.StandardOutput.ReadLine();
+        //            if (line.Contains("TPPosX"))
+        //            {
+        //                float.TryParse(line.Substring(line.IndexOf('=') + 1), out posX);
+        //            }
+        //            else if (line.Contains("TPPosY"))
+        //            {
+        //                float.TryParse(line.Substring(line.IndexOf('=') + 1), out posY);
+        //            }
+        //        }
+
+        //        process.WaitForExit();
+
+
+        //        if (posX > float.MinValue && posY > float.MinValue)
+        //        {
+        //            landscapeXY = new PointF(posX, posY);
+        //        }
+        //    }
+        //    catch (System.ComponentModel.Win32Exception)
+        //    {
+        //        missingCoCoCo = true;
+        //        //writeLine(string.Format("Failed to run {0}. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.Executable));
+        //    }
+
+        //    return landscapeXY;
+        //}
 
         // Should have been able to reproject using DotSpatial but I could not figure it out.
         // Implementation from https://www.ibm.com/developerworks/library/j-coordconvert/index.html

@@ -171,6 +171,8 @@ namespace LandscapeBuilderLib
                 generateThermalFile();
             }
 
+            generateAirports();
+
             elapsed.Stop();
             Utilities.WriteLine(string.Format("Finished processing! Total elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
         }
@@ -484,6 +486,7 @@ namespace LandscapeBuilderLib
         private void generateAirports()
         {
             byte[] bytes = null;
+            List<string> needToBeFlattened = new List<string>();
             foreach (Airport airport in Airports)
             {
                 // Combine all of the bytes to use for the .apt file
@@ -504,13 +507,19 @@ namespace LandscapeBuilderLib
                     List<string> strings = flattener.ToStringList();
                     flattener.Flatten();
                 }
+                else
+                {
+                    needToBeFlattened.Add(airport.Name);
+                }
+
                 airport.GenerateObjects();
             }
 
             // Write to .apt file.
             if (bytes != null)
             {
-                File.WriteAllBytes(@"D:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
+                // TODO: Remember to stop hardcoding this.
+                File.WriteAllBytes(@"E:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
             }
         }
 
