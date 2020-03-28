@@ -88,8 +88,6 @@ namespace LandscapeBuilderLib
             _outputText = outputToConsole ? null : string.Empty;
             SettingsManager.Instance.InitSettings();
             InitializeAirports();
-
-            generateAirports();
         }
 
         // genDDS determines if nvdxt.exe is used to build the DDS files actually used as textures by Condor.
@@ -296,6 +294,7 @@ namespace LandscapeBuilderLib
             foreach(var patch in patches)
             {
                 string patchName = string.Format("t{0}.bmp", patch.Key);
+                // TODO: These should go into a Working directory under the Final outputs.
                 patch.Value.Save(Path.Combine(SettingsManager.Instance.OutputTexturePatchDir, patchName), ImageFormat.Bmp);
             }
         }
@@ -489,37 +488,46 @@ namespace LandscapeBuilderLib
             List<string> needToBeFlattened = new List<string>();
             foreach (Airport airport in Airports)
             {
-                // Combine all of the bytes to use for the .apt file
-                if (bytes == null)
+                if (airport.IncludeInAPT)
                 {
-                    bytes = airport.GetAptBytes();
-                }
-                else
-                {
-                    bytes = bytes.Concat(airport.GetAptBytes()).ToArray();
+
+                    // Combine all of the bytes to use for the .apt file
+                    if (bytes == null)
+                    {
+                        bytes = airport.GetAptBytes();
+                    }
+                    else
+                    {
+                        bytes = bytes.Concat(airport.GetAptBytes()).ToArray();
+                    }
                 }
 
-                // If we have data for the corners, also flatten the terrain.
-                // TODO: Maybe spit out the airports that were missing data to alert the user as to which ones need to be done manually?
-                if (airport.RunwayCorners != null)
+                if (airport.Flatten)
                 {
-                    TerrainFlattener flattener = new TerrainFlattener(airport.RunwayCorners, (short)airport.Altitude);
-                    List<string> strings = flattener.ToStringList();
-                    flattener.Flatten();
-                }
-                else
-                {
-                    needToBeFlattened.Add(airport.Name);
+                    // If we have data for the corners, also flatten the terrain.
+                    // TODO: Maybe spit out the airports that were missing data to alert the user as to which ones need to be done manually?
+                    if (airport.RunwayCorners != null)
+                    {
+                        TerrainFlattener flattener = new TerrainFlattener(airport.RunwayCorners, (short)airport.Altitude);
+                        List<string> strings = flattener.ToStringList();
+                        flattener.Flatten();
+                    }
+                    else
+                    {
+                        needToBeFlattened.Add(airport.Name);
+                    }
                 }
 
-                airport.GenerateObjects();
+                if (airport.ShouldGenerateObjects)
+                {
+                    airport.GenerateObjects();
+                }
             }
 
             // Write to .apt file.
             if (bytes != null)
             {
-                // TODO: Remember to stop hardcoding this.
-                File.WriteAllBytes(@"E:\Program Files (x86)\Condor2\Landscapes\CentralVA\CentralVA.apt", bytes);
+                File.WriteAllBytes(Path.Combine(SettingsManager.Instance.OutputFinalDir, string.Format("{0}.apt", SettingsManager.Instance.LandscapeName)), bytes);
             }
         }
 

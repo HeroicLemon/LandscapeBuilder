@@ -57,6 +57,15 @@ namespace LandscapeBuilderLib
         // The lat/long of the four corners of the runway. Used for flattening the terrain around the runway.
         public PointF[] RunwayCorners { get; private set; }
 
+        // Include in the .apt file.
+        public bool IncludeInAPT { get; set; } = true;
+
+        // Generate objects for runway/windsock.
+        public bool ShouldGenerateObjects { get; set; } = true;
+
+        // Generate height data
+        public bool Flatten { get; set; } = false;
+
         public Airport(string name, float latitude, float longitude, float altitude, float direction, int length, int width, bool asphalt = false, PointF[] runwayCorners = null, float frequency = 123.3f, bool primaryDirectionReversed = false, bool towPrimaryLeftSide = false, bool towSecondaryLeftSide = false)
         {
             // TODO: Really only need to do this for the file names...

@@ -12,7 +12,7 @@ namespace LandscapeBuilderLib
         public void GenerateObjects()
         {
             addRunway();
-            addWindsock(Width / 2f + 5);
+            addWindsock(0, Width / 2f + 5);
 
             GrassObjects.ToObjMtl(string.Format("{0}G", Name));
             OtherObjects.ToObjMtl(string.Format("{0}O", Name));
@@ -23,7 +23,7 @@ namespace LandscapeBuilderLib
             WorldObject runway = new WorldObject();
             runway.Name = Asphalt ? "Asphalt" : "Grass";
 
-            float x = Length / 2.0f;
+            float x = Length / 2.0f; 
             float y = 0.001f;
             float z = Width / 2.0f;
 

@@ -228,7 +228,14 @@ namespace LandscapeBuilderLib
             }
 
             // For some reason, incrementing the direction by 2 degrees gets better results in most cases.
-            return direction += 2;
+            direction += 2;
+
+            while(direction > 360)
+            {
+                direction -= 360;
+            }
+
+            return direction;
         }
 
         // TODO: This mostly works, but I think I need to account for magnetic variation.

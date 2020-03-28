@@ -103,6 +103,43 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
+            <TabItem Header="Airports">
+                <ListView ItemsSource="{Binding Path=Airports}" x:Name="AirportList">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Airport Name" DisplayMemberBinding="{Binding Path=Name}" Width="200"/>
+                            <GridViewColumn Header="Include in .apt">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Path=IncludeInAPT}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Generate Objects">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Path=ShouldGenerateObjects}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Flatten Terrain">
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding Path=Flatten}"/>
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Header="Latitude" DisplayMemberBinding="{Binding Path=Latitude}"/>
+                            <GridViewColumn Header="Longitude" DisplayMemberBinding="{Binding Path=Longitude}"/>
+                            <GridViewColumn Header="Altitude" DisplayMemberBinding="{Binding Path=Altitude}"/>
+                            <GridViewColumn Header="Direction" DisplayMemberBinding="{Binding Path=Direction}"/>
+                            <GridViewColumn Header="Length" DisplayMemberBinding="{Binding Path=Length}"/>
+                            <GridViewColumn Header="Width" DisplayMemberBinding="{Binding Path=Width}"/>
+                            <GridViewColumn Header="Frequency" DisplayMemberBinding="{Binding Path=Frequency}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </TabItem>
             <TabItem Header="Directories">
                 <StackPanel>
                     <TextBlock Text="Input Directory"/>

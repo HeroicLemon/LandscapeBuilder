@@ -24,6 +24,13 @@ namespace LandscapeBuilderGUI
             set { SetProperty(ref _textures, value); }
         }
 
+        private List<Airport> _airports;
+        public List<Airport> Airports
+        {
+            get { return _airports; }
+            set { SetProperty(ref _airports, value); }
+        }
+
         private string _outputDirectory;
         public string OutputDirectory
         {
@@ -181,6 +188,7 @@ namespace LandscapeBuilderGUI
 
             _landscapeBuilder.InitializeTextures();
             _textures = _landscapeBuilder.Textures;
+            _airports = _landscapeBuilder.Airports;
             _outputDirectory = SettingsManager.Instance.OutputDir;
             _inputDirectory = SettingsManager.Instance.InputDir;
             _landscapeName = SettingsManager.Instance.LandscapeName;
@@ -220,6 +228,8 @@ namespace LandscapeBuilderGUI
             SettingsManager.Instance.OutputDir = OutputDirectory;
             SettingsManager.Instance.InputDir = InputDirectory;
             _landscapeBuilder.SaveSettings();
+
+            _landscapeBuilder.Airports = Airports;
         }
 
         bool CanSave()
