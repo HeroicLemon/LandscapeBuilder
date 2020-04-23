@@ -33,6 +33,8 @@ namespace LandscapeBuilderLib
         private byte[] _byteData;
         public byte[] ByteData {  get { return _byteData; } }
 
+        public IntPtr Hbitmap {  get { return _bitmap.GetHbitmap(); } }
+
         public BitmapWrapper(string path, ImageLockMode lockMode = ImageLockMode.ReadOnly)
         {
             _bitmap = new Bitmap(path);

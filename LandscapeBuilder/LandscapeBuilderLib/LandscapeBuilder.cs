@@ -6,6 +6,10 @@ using System.Diagnostics;
 using System.Drawing.Imaging;
 using System.Linq;
 using Newtonsoft.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using TeximpNet.Compression;
+using TeximpNet;
 
 namespace LandscapeBuilderLib
 {
@@ -83,6 +87,8 @@ namespace LandscapeBuilderLib
         private string _outputText = null;
         public string OutputText { get { return _outputText; } }
 
+        private static SemaphoreSlim semaphore;
+
         public LandscapeBuilder(bool outputToConsole = true)
         {
             _outputText = outputToConsole ? null : string.Empty;
@@ -142,37 +148,42 @@ namespace LandscapeBuilderLib
             Utilities.WriteLine("Beginning Processing...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
 
+            semaphore = new SemaphoreSlim(5);
             // Create the intermediary outputs.
-            build();
-
-            // Generate DDS textures
-            if (genDDS)
+            if(Task.Run(() => build()).Result)
             {
-                generateDDS();
-            }
+                // Generate the thermal map from the tile outputs, it's one big image.
+                generateThermalMap();
 
-            // Generate the .for forest files.
-            if (genForestFiles)
-            {
-                generateForestFiles();
-
-                if (outputToCondor)
+                // Generate the .for forest files.
+                if (genForestFiles)
                 {
-                    // If we're writing to the Condor directory, we need to generate the hashes.
-                    generateHashes();
+                    generateForestFiles();
+
+                    if (outputToCondor)
+                    {
+                        // If we're writing to the Condor directory, we need to generate the hashes.
+                        generateHashes();
+                    }
                 }
-            }
 
-            // Generate the .tdm thermal file.
-            if (genThermalFile)
+                // Generate the .tdm thermal file.
+                if (genThermalFile)
+                {
+                    generateThermalFile();
+                }
+
+                generateAirports();
+
+
+                elapsed.Stop();
+                Utilities.WriteLine(string.Format("Finished processing! Total elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+            }         
+            else
             {
-                generateThermalFile();
+                Utilities.WriteLine("Processing failed.", ref _outputText);
             }
 
-            generateAirports();
-
-            elapsed.Stop();
-            Utilities.WriteLine(string.Format("Finished processing! Total elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
         }
 
         private void getLandscapeWidthAndHeight()
@@ -186,77 +197,100 @@ namespace LandscapeBuilderLib
         }
 
         // Generates the intermediate tile textures, forest maps, and thermal map.
-        private void build()
+        private async Task<bool> build()
         {
             string[] mapFiles = Directory.GetFiles(SettingsManager.Instance.InputAtlasDir, "*.png", SearchOption.TopDirectoryOnly);
+            var buildTasks = new List<Task<string>>();
+
+            // Add all the tasks for build the tiles.
             foreach (string file in mapFiles)
             {
                 if (_singleTile == string.Empty || _singleTile == Path.GetFileNameWithoutExtension(file))
                 {
-                    buildTile(file);
+                    buildTasks.Add(buildTileAsync(file));
                 }
             }
 
-            // Generate the thermal map from the tile outputs, it's one big image.
-            generateThermalMap();
+            // Run them.
+            await Task.WhenAll(buildTasks);
+
+            return true;
         }
 
-        private void buildTile(string strFile)
+        private async Task<string> buildTileAsync(string strFile)
         { 
             string tileName = Path.GetFileNameWithoutExtension(strFile);
-            Utilities.Write(string.Format("Processing tile {0}...", tileName), ref _outputText);
-            Stopwatch elapsed = Stopwatch.StartNew();
 
-            // Load the input map.
-            BitmapWrapper mapInput = new BitmapWrapper(strFile);
+            await Task.Run(() => {
+                semaphore.Wait();
 
-            // Create bitmaps for the outputs.
-            BitmapWrapper textureOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
-            BitmapWrapper deciduousOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
-            BitmapWrapper coniferousOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
-            BitmapWrapper thermalOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
-
-            for (int i = 0; i < mapInput.Width; i++)
-            {
-                for(int j = 0; j < mapInput.Height; j++)
+                try
                 {
-                    // Get the color of the current pixel in the map.
-                    Color mapColor = mapInput.GetPixel(i, j);
+                    Utilities.WriteLine(string.Format("Beginning processing for tile {0}...", tileName), ref _outputText);
+                    Stopwatch elapsed = Stopwatch.StartNew();
 
-                    LandData landData;
-                    // Get the data 
-                    if (Textures.ContainsKey(mapColor))
+                    // Load the input map.
+                    BitmapWrapper mapInput = new BitmapWrapper(strFile);
+
+                    // Create bitmaps for the outputs.
+                    BitmapWrapper textureOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
+                    BitmapWrapper deciduousOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
+                    BitmapWrapper coniferousOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
+                    BitmapWrapper thermalOutput = new BitmapWrapper(8192, 8192, PixelFormat.Format32bppArgb, ImageLockMode.WriteOnly);
+
+                    for (int i = 0; i < mapInput.Width; i++)
                     {
-                        landData = Textures[mapColor];
+                        for (int j = 0; j < mapInput.Height; j++)
+                        {
+                            // Get the color of the current pixel in the map.
+                            Color mapColor = mapInput.GetPixel(i, j);
+
+                            LandData landData;
+                            // Get the data 
+                            if (Textures.ContainsKey(mapColor))
+                            {
+                                landData = Textures[mapColor];
+                            }
+                            else
+                            {
+                                landData = Textures[_defaultColor];
+                            }
+
+                            // Set pixel colors for output bitmaps.
+                            textureOutput.SetPixel(i, j, landData.GetColor(i, j));
+                            deciduousOutput.SetPixel(i, j, landData.DeciduousForestColor);
+                            coniferousOutput.SetPixel(i, j, landData.ConiferousForestColor);
+                            thermalOutput.SetPixel(i, j, landData.ThermalColor);
+                        }
                     }
-                    else
-                    {
-                        landData = Textures[_defaultColor];
-                    }                     
 
-                    // Set pixel colors for output bitmaps.
-                    textureOutput.SetPixel(i, j, landData.GetColor(i, j));
-                    deciduousOutput.SetPixel(i, j, landData.DeciduousForestColor);
-                    coniferousOutput.SetPixel(i, j, landData.ConiferousForestColor);
-                    thermalOutput.SetPixel(i, j, landData.ThermalColor);
+                    // Save the bitmaps
+                    textureOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputTextureDir, @"{0}.bmp"), tileName));
+                    saveTexturePatches(textureOutput.Bitmap, tileName);
+
+                    deciduousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTilesDir, @"b{0}.bmp"), tileName), 2048);
+                    coniferousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTilesDir, @"s{0}.bmp"), tileName), 2048);
+                    thermalOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputThermalMapTilesDir, @"{0}.bmp"), tileName), 256);
+
+                    textureOutput.Dispose();
+                    deciduousOutput.Dispose();
+                    coniferousOutput.Dispose();
+                    thermalOutput.Dispose();                    
+
+                    elapsed.Stop();
+                    Utilities.WriteLine(string.Format("Finished processing tile {0}! Elapsed time: {1} minutes, {2} seconds.", tileName, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
                 }
-            }
+                finally
+                {
+                    semaphore.Release();
+                }
 
-            // Save the bitmaps
-            textureOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputTextureDir, @"{0}.bmp"), tileName));
-            saveTexturePatches(textureOutput.Bitmap, tileName);
-            
-            deciduousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTilesDir, @"b{0}.bmp"), tileName), 2048);
-            coniferousOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputForestMapTilesDir, @"s{0}.bmp"), tileName), 2048);
-            thermalOutput.Save(string.Format(Path.Combine(SettingsManager.Instance.OutputThermalMapTilesDir, @"{0}.bmp"), tileName), 256);
+            });
 
-            textureOutput.Dispose();
-            deciduousOutput.Dispose();
-            coniferousOutput.Dispose();
-            thermalOutput.Dispose();
+            await generateDDS(tileName);
 
-            elapsed.Stop();
-            Utilities.WriteLine(string.Format("Done! Elapsed time: {0} minutes, {1} seconds.", elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+            return tileName;
+
         }
 
         // Splits a tile into its 16 patches.
@@ -287,6 +321,28 @@ namespace LandscapeBuilderLib
             return patches;
         }
 
+        private List<string> getPatchNamesForTile(string tileName)
+        {
+            List<string> patchNames = new List<string>();
+            Point tileCoordinates = Utilities.GetTileCoordinatesFromName(tileName);
+            int tileX = tileCoordinates.X;
+            int tileY = tileCoordinates.Y;
+
+            for (int i = 0; i < 4; i++)
+            {
+                for (int j = 0; j < 4; j++)
+                {
+                    int patchX = tileX * 4 + i;
+                    int patchY = tileY * 4 + j;
+                    string patchName = string.Format("{0:00}{1:00}", patchX, patchY);
+
+                    patchNames.Add(patchName);
+                }
+            }
+
+            return patchNames;
+        }
+
         private void saveTexturePatches(Bitmap bitmap, string tileName)
         {
             Dictionary<string, Bitmap> patches = splitTileToPatches(bitmap, tileName);
@@ -295,7 +351,7 @@ namespace LandscapeBuilderLib
             {
                 string patchName = string.Format("t{0}.bmp", patch.Key);
                 // TODO: These should go into a Working directory under the Final outputs.
-                patch.Value.Save(Path.Combine(SettingsManager.Instance.OutputTexturePatchDir, patchName), ImageFormat.Bmp);
+                patch.Value.Save(Path.Combine(SettingsManager.Instance.OutputTexturePatchDir, patchName), System.Drawing.Imaging.ImageFormat.Bmp);
             }
         }
 
@@ -392,35 +448,42 @@ namespace LandscapeBuilderLib
         }
 
         // Generates the actual DDS texture files.
-        private void generateDDS()
+        private async Task generateDDS(string tileName)
         {
-            Utilities.WriteLine("Generating DDS...", ref _outputText);
             Stopwatch elapsed = Stopwatch.StartNew();
+            Utilities.WriteLine(string.Format("Generating DDS for tile {0}...", tileName), ref _outputText);
 
-            Process process = new Process();
-            process.StartInfo.FileName = "nvdxt.exe";
-            process.StartInfo.Arguments = string.Format("-quality_highest -nmips 12 -dxt3 -Triangle -file \"{0}\" -outdir \"{1}\"", Path.Combine(SettingsManager.Instance.OutputTexturePatchDir, "t*.bmp"), SettingsManager.Instance.OutputDDSDir);
-            process.StartInfo.UseShellExecute = false;
-            process.StartInfo.RedirectStandardOutput = _outputText == null;
-            process.OutputDataReceived += new DataReceivedEventHandler(processOutput);
-
-            try
+            var ddsTasks = new List<Task<string>>();
+            foreach(string patchName in getPatchNamesForTile(tileName))
             {
-                process.Start();
-                if (_outputText == null)
-                {
-                    process.BeginOutputReadLine();
-                }
-                process.WaitForExit();
+                ddsTasks.Add(generateDDSAsync(patchName));
+            }
 
-                elapsed.Stop();
-                Utilities.WriteLine(string.Format("Done! Elapsed time: {0} hours, {1} minutes, {2} seconds.", elapsed.Elapsed.Hours, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
-            }
-            catch (System.ComponentModel.Win32Exception)
+            await Task.WhenAll(ddsTasks);
+
+            elapsed.Stop();
+            Utilities.WriteLine(string.Format("Finished generating DDS for tile {0}! Elapsed time: {1} minutes, {2} seconds.", tileName, elapsed.Elapsed.Minutes, elapsed.Elapsed.Seconds), ref _outputText);
+        }
+
+        private async Task<string> generateDDSAsync(string patchName)
+        {
+            
+
+            string patchFile = Path.Combine(SettingsManager.Instance.OutputTexturePatchDir, string.Format("t{0}.bmp", patchName));
+            string ddsFile = Path.Combine(SettingsManager.Instance.OutputDDSDir, string.Format("t{0}.dds", patchName));
+            Surface surface = Surface.LoadFromFile(patchFile);
+
+            await Task.Run(() =>
             {
-                elapsed.Stop();
-                Utilities.WriteLine(string.Format("Failed to generate DDS. Ensure {0} is in '{1}' or set up in the Path environment variable", process.StartInfo.FileName, SettingsManager.Instance.ExecutableDir), ref _outputText);
-            }
+                Compressor compressor = new Compressor();
+                compressor.Input.SetData(surface);
+                compressor.Input.SetMipmapGeneration(true, 12);
+                compressor.Compression.Format = CompressionFormat.BC2;
+
+                compressor.Process(ddsFile);
+            });
+
+            return patchName;
         }
 
         // Creates a single thermal map from the per tile thermal maps.
