@@ -22,6 +22,7 @@ namespace LandscapeBuilderLib
             return (double)(p2.Y - p1.Y) / (double)(p2.X - p1.X);
         }
 
+        // Uses CoCoCo to translate the lat/long corners into the landscape's XY coordinates.
         public static PointF LatLongToLandscapeXY(PointF latLong)
         {
             float xmax, ymax = 0;
@@ -30,7 +31,10 @@ namespace LandscapeBuilderLib
             float x = -1;
             float y = -1;
 
-            if (utm_init_c_("E:\\Program Files (x86)\\Condor2\\Landscapes\\CentralVA\\CentralVA.trn", out xmax, out ymax))
+            string trnFile = string.Format("{0}.trn", SettingsManager.Instance.LandscapeName);
+            string trnPath = Path.Combine(SettingsManager.Instance.CurrentLandscapeDir, trnFile);
+
+            if (utm_init_c_(trnPath, out xmax, out ymax))
             {
                 if (!latlontoxy_(out lat, out lon, out x, out y))
                 {
